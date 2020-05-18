@@ -1,7 +1,7 @@
 .PHONY = all scrape clean help
 EXE = pvss
-CFLAGS = -Wall -Wextra -std=c++11
-LDFLAGS =
+CFLAGS = -Wall -Wextra -pthread
+LDFLAGS = -lm -lntl -lgmp
 
 .PHONY: all wave clean help
 
@@ -11,7 +11,7 @@ scrape: pvss.o
 			g++ $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 pvss.o: pvss.c pvss.h
-			g++ $(CFLAGS) $(CPPFLAGS) -c $< $(LDFLAGS)
+			g++ $(CFLAGS) -c $< $(LDFLAGS)
 
 clean:
 			@rm -f *~ *.o scrape

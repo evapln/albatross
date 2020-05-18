@@ -6,7 +6,6 @@
 #include <math.h>
 #include <unistd.h>
 
-#include <NTL/ZZ.h>
 
 #include "pvss.h"
 
@@ -14,53 +13,45 @@
 bool dist = false;
 bool rec = false;
 
+// need to be changed in ZZ, and ZZ_p -> instead of arrays : use vectors
 struct pl_t {
   int n;
   int t;
   int q;
   int l;
   int r;
-  int h;
-  int *pk;
-  int *sig;
+  double h;
+  double *pk;
+  double *pi;
+  double *sig;
   int *LDEI;
-  int **sigg;
+  int *sigg_ind;
+  double *sigg;
   int *DLEQ;
-  int *S;
+  double *S;
 };
 
-pl_t *pl_alloc(int n) {
+pl_t *pl_alloc(const int n) {
   pl_t *pl = (pl_t*)malloc(sizeof(pl_t));
   if (!pl)
     return NULL;
-  pl->pk = (int*)malloc(n * sizeof(int));
-  pl->sig = (int*)malloc(n * sizeof(int));
+  pl->pk = (double*)malloc(n * sizeof(double));
+  pl->pi = (double*)malloc(n * sizeof(double));
+  pl->sig = (double*)malloc(n * sizeof(double));
   pl->LDEI = (int*)malloc(n * sizeof(int));
-  pl->sigg = (int**)malloc(2 * sizeof(int*));
+  pl->sigg_ind = (int*)malloc(n * sizeof(int));
+  pl->sigg = (double*)malloc(n * sizeof(double));
   pl->DLEQ = (int*)malloc(n * sizeof(int));
-  pl->S = (int*)malloc(n * sizeof(int));
-  if (!pl->pk || !pl->sig || !pl->LDEI || !pl->sigg || !pl->DLEQ || !pl->S) {
+  pl->S = (double*)malloc(n * sizeof(double));
+  if (!pl->pk || !pl->pi || !pl->sig || !pl->LDEI || !pl->sigg_ind || !pl->sigg || !pl->DLEQ || !pl->S) {
     free(pl->S);
     free(pl->DLEQ);
+    free(pl->sigg_ind);
     free(pl->sigg);
     free(pl->LDEI);
     free(pl->pk);
+    free(pl->pi);
     free(pl->sig);
-    free(pl);
-    return NULL;
-  }
-  pl->sigg[0] = (int*)malloc(n*sizeof(int));
-  pl->sigg[1] = (int*)malloc(n*sizeof(int));
-  if (!pl->sigg[0] || !pl->sigg[0]) {
-    free(pl->S);
-    free(pl->DLEQ);
-    free(pl->sigg);
-    free(pl->LDEI);
-    free(pl->pk);
-    free(pl->sig);
-    free(pl->sigg[0]);
-    free(pl->sigg[1]);
-    free(pl->sigg);
     free(pl);
     return NULL;
   }
@@ -69,7 +60,6 @@ pl_t *pl_alloc(int n) {
   pl->q = 0;
   pl->l = 0;
   pl->r = 0;
-  pl->h = 0;
   return pl;
 }
 
@@ -77,71 +67,70 @@ void pl_free(pl_t *pl) {
   if (pl) {
     free(pl->S);
     free(pl->DLEQ);
-    free(pl->sigg[0]);
-    free(pl->sigg[1]);
+    free(pl->sigg_ind);
     free(pl->sigg);
     free(pl->LDEI);
     free(pl->pk);
+    free(pl->pi);
     free(pl->sig);
     free(pl);
   }
 }
 
 void pl_print(pl_t *pl) {
-  puts("\nPublic Ledger :");
-  printf("%d participants\n%d threshold\nq = %d\n", pl->n, pl->t, pl->q);
+  puts("\n\n_________________________ Public Ledger _____________________________");
+  printf("  %d participants\n    q = %d\n", pl->n, pl->q);
   if (pl->pk) {
-    printf("pk : ");
+    printf("    pk : ");
     for (int i = 0; i < pl->n; i++)
-      printf("%d ", pl->pk[i]);
+      printf("%.0f ", pl->pk[i]);
   }
   if (dist) {
-    if (pl->sig) {
-      printf("\nsig : ");
+    printf("\n  %d threshold",pl->t);
+    if (pl->pi) {
+      printf("\n    pi : ");
       for (int i = 0; i < pl->n; i++)
-        printf("%d ", pl->sig[i]);
+        printf("%.0f ", pl->pi[i]);
+    }
+    if (pl->sig) {
+      printf("\n    sig : ");
+      for (int i = 0; i < pl->n; i++)
+        printf("%.0f ", pl->sig[i]);
     }
     if (pl->LDEI) {
-      printf("\nLDEI : ");
+      printf("\n      LDEI : ");
       for (int i = 0; i < pl->n; i++)
         printf("%d ", pl->LDEI[i]);
     }
   }
   if (rec) {
-    printf("\n%d parties want to reconstruct\n",pl->r);
+    printf("\n  %d parties want to reconstruct",pl->r);
     if (pl->sigg && pl->sigg[0] && pl->sigg[1]) {
-      printf("\nsigg : ");
+      printf("\n    sigg : ");
       for (int i = 0; i < pl->r; i++)
-        printf("[%d:%d] ", pl->sigg[0][i], pl->sigg[1][i]);
+        printf("[%d:%.0f] ", pl->sigg_ind[i], pl->sigg[i]);
     }
     if (pl->DLEQ) {
-      printf("\nDLEQ : ");
+      printf("\n      DLEQ : ");
       for (int i = 0; i < pl->r; i++)
         printf("%d ", pl->DLEQ[i]);
     }
-    printf("\nThe %d secrets are\n",pl->l);
+    printf("\n  The %d secrets are : ",pl->l);
     if (pl->S) {
       for (int i = 0; i < pl->l; i++)
-        printf("%d ", pl->S[i]);
+        printf("%.0f ", pl->S[i]);
     }
   }
-  puts("");
+  puts("\n_____________________________________________________________________\n");
 }
 
-int mod(int n, int q) {
+int mod(const int n, const int q) {
   int r = n % q;
   return r < 0 ? r + q :r;
 }
 
-int inv(int a, int q) {
-  for (int b = 1; b < q; b++)
-    if (mod(a*b,q) == 1)
-      return b;
-  return 0;
-}
 
-// initialisation of randomness -> call with seed = time(NULL) + getpid()
-void prng_init(unsigned int seed) {
+void prng_init(const unsigned int seed) {
   static bool seed_init = false;
   if (! seed_init) {
     srand(seed);
@@ -149,50 +138,50 @@ void prng_init(unsigned int seed) {
   }
 }
 
-int apply_poly(int *poly, int deg, int val, int q) {
-  int res = 0;
+double apply_poly(const int *poly, const int deg, const int val, const int q) {
   long mul = 1;
-  for (int i = 0; i < deg; i++) {
+  double res = 0;
+  for (int i = 0; i <= deg; i++) {
     res = mod(res + mod(poly[i] * mul,q),q);
     mul = mod(mul * val, q);
   }
   return res;
 }
 
-// random polynomial in Z_q[X] of degree deg
-int *rand_poly(int deg, int q) {
+int *rand_poly(const int deg, const int q) {
   if (deg < 0) // non valid degree
     return NULL;
   prng_init(time(NULL) + getpid());
-  int *p = (int*)malloc(deg*sizeof(int));
+  int *p = (int*)malloc((deg+1)*sizeof(int));
   if (!p) // error of allocation
     return NULL;
-  for (int i = 0; i < deg; i++)
+  for (int i = 0; i <= deg; i++)
     p[i] = rand() % q;
   return p;
 }
 
-// setup return the secretkey
-int *setup(int q, int h, pl_t *pl) {
+float *setup(const int q, const double h, pl_t *pl) {
   if (!pl)
     return NULL;
   prng_init(time(NULL) + getpid());
-  int *sk = (int*)malloc(pl->n*sizeof(int));
+  float *sk = (float*)malloc((pl->n)*sizeof(int));
   if (!sk)
     return NULL;
+  float s;
   for (int i = 0; i < pl->n; i++) {
-    sk[i] = rand() % q;
-    pl->pk[i] = mod(h^sk[i], q);
+    s = rand() % q;
+    while (s == 0)
+      s = rand() % q;
+    sk[i] = s;
+    pl->pk[i] = pow(h, sk[i]);
+    // pow(pl->pk[i], h, sk[i]);
   }
   pl->q = q;
   pl->h = h;
   return sk;
 }
 
-
-// n participants, t threshold, l = n-2t-1
-// return the list of the secrets ( one secret for one participant)
-void distribution(int l, int t, pl_t *pl) {
+void distribution(const int l, const int t, pl_t *pl) {
   if (!pl || t < 1 || t > pl->n)
     return;
   int deg = t + l;
@@ -200,20 +189,22 @@ void distribution(int l, int t, pl_t *pl) {
   if (p) {
     pl->l = l;
     pl->t = t;
-    puts("poly ");
-    for (int i = 0; i < deg; i++)
-      printf("%d ",p[i]);
+    printf("poly = %d", p[0]);
+    for (int i = 1; i < deg; i++) {
+      printf(" + %d*x^%d",p[i],i);
+    }
     puts("");
-    // print secrets for verification
+// print secrets for verification //////////////////////////
     puts("\nSecrets :");
     for (int i = 0; i < l; i++) {
-      int ap = apply_poly(p,deg,-i, pl->q);
-      printf("S%d = h^%d = %d\n", i, ap, mod((pl->h)^ap, pl->q));
+      double ap = apply_poly(p,deg,-i, pl->q);
+      printf("S%d = h^%f = %f\n", i, ap, pow(pl->h,ap));
     }
+////////////////////////////////////////////////////////////
     for (int i = 0; i < pl->n; i++) {
-      int ap = apply_poly(p, deg, i+1, pl->q);
-      // printf("%d : %d\n",i+1,ap);
-      pl->sig[i] = mod((pl->pk[i])^ap, pl->q);
+      double ap = apply_poly(p, deg, i+1, pl->q);
+      pl->pi[i] = ap;
+      pl->sig[i] = pow(pl->pk[i],ap);
       pl->LDEI[i] = 0; // PREUVE A FAIRE
     }
     dist = true;
@@ -221,10 +212,12 @@ void distribution(int l, int t, pl_t *pl) {
   }
 }
 
-int lambda(int i, int j, int *tab, int len) {
-  int num = 1, den = 1;
+int lambda(const int i, const int j, const int *tab, const int len) {
+  double num, den;
+  num = 1;
+  den = 1;
   for (int k = 0; k < len; k++) {
-    int m = tab[k];
+    double m = tab[k];
     if (m != i) {
       num *= (-j-m);
       den *= (i-m);
@@ -233,46 +226,59 @@ int lambda(int i, int j, int *tab, int len) {
   return num/den;
 }
 
-// reconstruct the secret vector
-int *reconstruction(int r, pl_t *pl) {
+ void reconstruction(Vec<ZZ>& S, const int r, pl_t *pl) {
   if (!pl) // error : the public ledger doesn't exist
-    return NULL;
-  if (r < pl->n - pl->t) // error : not enough parts
-    return NULL;
+    return;
+  int t = pl->n - pl->t;
+  if (r < t) // error : not enough parts
+    return;
+  S.SetLength(pl->l);
   // verification of proof DLEQ
+  double num, den;
+  float s;
   for (int j = 0; j < pl->l; j++) {
-    int s = 1;
-    for (int i = 0; i < r; i++) {
-      s = mod(s * pl->sigg[1][i]^lambda(pl->sigg[0][i],j,pl->sigg[0],r),pl->q);
+    s = 1;
+    // cout <<  j << " : " << s << endl;
+    for (int i = 0; i < t; i++) {
+      num = 1; den = 1;
+      for (int m = 0; m < t; m++)
+        if (m != i) {
+          num *= - j - pl->sigg_ind[m];
+          den *= (pl->sigg_ind[i] - pl->sigg_ind[m]);
+        }
+      //// cout << "\nnum : " << num << "\nden : "<< den << "\ndiv : " << num/den << endl;
+      //// int lamb = lambda(pl->sigg_ind[i],-j,pl->sigg_ind,r);
+      //// sum += (s[j] + (pl->pi[i] * (num / den) % q ) % q) % q;
+      //// operator*=(s,pow(pl->sigg[i],lambda(pl->sigg_ind[i],j,pl->sigg_ind,r)));
+      //// printf("sigg = %f, j = %d, i = %d\n",pl->sigg[i], j, pl->sigg_ind[i]);
+
+      // the following line doesn't work because pow can't take a ZZ in power
+      s *= pow(pl->sigg[i],num/den);
+      // cout << j << " : " << num/den << " " << pow(pl->sigg[i],num/den) << " " << s << endl;
     }
-    pl->S[j] = s;
+    S[j] = s;
+    // printf("p(%d) = %f\t",-j,sum);
+    pl->S[j] = 0;
   }
   pl->r = r;
   rec = true;
-  return NULL;
+  // return NULL;
 }
 
-// proofs : LDEI DLEQ
-////////////////////////////////////////////////////////////////////////////////
 
-
-
-/////// main
 int main(void) {
-  int n = 32;
-  int q = 41;
-  int t = 10;
+  int n = 6;
+  int q = 7;
+  int t = 2;
   int l = n-2*t;
   prng_init(time(NULL) + getpid());
-  int h = 0; //generator of F_q (q prime so every non zero element is a generator)
-  while (h == 0)
-    h = rand() % q;
-  pl_t *pl = (pl_t*)pl_alloc(n);
+  double h = 3; //generator of F_7
+  pl_t *pl = pl_alloc(n);
   if (!pl) {
     puts("oups");
     return EXIT_FAILURE;
   }
-  int *sk = (int*)setup(q,h,pl);
+  float *sk = setup(q,h,pl);
   if (!sk) {
     puts("error");
     pl_free(pl);
@@ -280,55 +286,56 @@ int main(void) {
   }
   printf("sk : ");
   for (int i = 0; i < n; i++)
-    printf("%d ",sk[i]);
+    printf("%f ",sk[i]);
   puts("\n");
+
+  pl_print(pl);
+  distribution(l,t,pl);
   pl_print(pl);
 
-  distribution(l,t,pl);
-
   // choice of the r participants who want to recover the secret vector
-  int tab[n], len = n, r = n - t;
+  int tab[n];
+  int len = n;
+  int r = n - t;
   for (int i = 0; i < len; i++)
-    tab[i] = i + 1;
+    tab[i] = i;
   for (int i = 0; i < r; i++) {
     int ind = rand() % len;
     int in = tab[ind];
-    pl->sigg[0][i] = in;
-    pl->sigg[1][i] = mod((pl->sig[in])^inv(sk[in],q),q);
+    pl->sigg_ind[i] = in + 1;
+    pl->sigg[i] = trunc(pow(pl->sig[in],1/sk[in]));
     pl->DLEQ[i] = 0;
     len--;
-    for (int j = ind; j < len - 1; j++)
+    for (int j = ind; j < len; j++)
       tab[j] = tab[j+1];
   }
 
-  printf("r = %d\n", r);
+  printf("\n%d participants want to recover the secret vector: \n", r);
   for (int i = 0; i < r; i++)
-    printf("%d ",pl->sigg[0][i]);
+    printf(" (%d,%.0f)\n",pl->sigg_ind[i], pl->sigg[i]);
 
-
-  reconstruction(r, pl);
-
+  Vec<ZZ> s;
+  reconstruction(s, r, pl);
   pl_print(pl);
+
+  cout << "bad secrets recovered: " << s <<endl;
 
   free(sk);
   pl_free(pl);
+  printf("\n\n---------------------------------------------------------------------\n");
 
-
-  // // test lambda
-  // puts("test lambda");
-  // int tab[5] = {1,2,3,4,5};
-  // for (int i = 0; i < 5; i++) {
-  //   for (int j = 0; j < 3; j++) {
-  //     printf("lambda(%d,%d) = %d\n",tab[i],j,lambda(tab[i],j,tab,5));
-  //   }
-  // }
 
   return EXIT_SUCCESS;
 }
 
 
 /* TODO :
+- voir d'où vient l'erreur dans setup !!!!!!!!!
+  -> remplacer tableaux par vecteurs
+  -> se servir du corps dans NTL
+- créer une fonction renvoyant un générateur d'un groupe multiplicatif
 - régler problème de reconstruction
-  -> voir si sigg correspondent à h^sig 
+  -> voir si sigg correspondent à h^sig
 - implémentation figure 6 dans scrape++
+- ajouter une fonction alloc qui permet de n'allouer que l'espace nécessaire
 - nettoyer le code */
