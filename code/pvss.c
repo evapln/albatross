@@ -238,7 +238,6 @@ int lambda(const int i, const int j, const int *tab, const int len) {
   float s;
   for (int j = 0; j < pl->l; j++) {
     s = 1;
-    // cout <<  j << " : " << s << endl;
     for (int i = 0; i < t; i++) {
       num = 1; den = 1;
       for (int m = 0; m < t; m++)
@@ -246,23 +245,14 @@ int lambda(const int i, const int j, const int *tab, const int len) {
           num *= - j - pl->sigg_ind[m];
           den *= (pl->sigg_ind[i] - pl->sigg_ind[m]);
         }
-      //// cout << "\nnum : " << num << "\nden : "<< den << "\ndiv : " << num/den << endl;
-      //// int lamb = lambda(pl->sigg_ind[i],-j,pl->sigg_ind,r);
-      //// sum += (s[j] + (pl->pi[i] * (num / den) % q ) % q) % q;
-      //// operator*=(s,pow(pl->sigg[i],lambda(pl->sigg_ind[i],j,pl->sigg_ind,r)));
-      //// printf("sigg = %f, j = %d, i = %d\n",pl->sigg[i], j, pl->sigg_ind[i]);
-
       // the following line doesn't work because pow can't take a ZZ in power
       s *= pow(pl->sigg[i],num/den);
-      // cout << j << " : " << num/den << " " << pow(pl->sigg[i],num/den) << " " << s << endl;
     }
     S[j] = s;
-    // printf("p(%d) = %f\t",-j,sum);
-    pl->S[j] = 0;
+    pl->S[j] = 0; // need to declare pl->S another way
   }
   pl->r = r;
   rec = true;
-  // return NULL;
 }
 
 
@@ -330,12 +320,10 @@ int main(void) {
 
 
 /* TODO :
-- voir d'où vient l'erreur dans setup !!!!!!!!!
-  -> remplacer tableaux par vecteurs
-  -> se servir du corps dans NTL
+- remplacer tableaux par vecteurs de ZZ
+- se servir du corps de NTL
 - créer une fonction renvoyant un générateur d'un groupe multiplicatif
 - régler problème de reconstruction
-  -> voir si sigg correspondent à h^sig
 - implémentation figure 6 dans scrape++
 - ajouter une fonction alloc qui permet de n'allouer que l'espace nécessaire
 - nettoyer le code */
