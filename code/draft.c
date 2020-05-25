@@ -13,7 +13,10 @@
 #include <unistd.h>
 
 #include <NTL/ZZ.h>
+#include <NTL/ZZ_p.h>
 #include <NTL/vector.h>
+#include <NTL/matrix.h>
+#include <NTL/ZZ_pX.h>
 
 using namespace std;
 using namespace NTL;
@@ -165,32 +168,34 @@ void reconstruction_multiZZ(Vec<ZZ>& s, double **shares, const int nb_shares, co
   }
 }
 
+
+
 // main for reconstruction_multiZZ
-int main(void) {
-  int n = 60;
-  int t = 16;
-  int q = 151;
-  int r = 16;
-  int l = n-2*t;
-  double *share = sharing_multi(t, n, l, q);
-  double **shares = (double**)malloc(r*sizeof(double*));
-  for (int i = 0; i < r; i++)
-    shares[i] = (double*)malloc(2*sizeof(double));
-  for (int i = 0; i < r; i++) {
-    shares[i][0] = i+1;
-    shares[i][1] = share[(int)shares[i][0]-1];
-  }
-  for (int i = 0; i < r; i++)
-    printf("[%.0f,%.0f] ",shares[i][0],shares[i][1]);
-  Vec<ZZ> s;
-  reconstruction_multiZZ(s, shares, r, l, t, q);
-  cout << std::endl << s << std::endl;
-  puts("");
-  free(share);
-  for (int i = 0; i < r; i++)
-    free(shares[i]);
-  free(shares);
-}
+// int main(void) {
+//   int n = 60;
+//   int t = 16;
+//   int q = 151;
+//   int r = 16;
+//   int l = n-2*t;
+//   double *share = sharing_multi(t, n, l, q);
+//   double **shares = (double**)malloc(r*sizeof(double*));
+//   for (int i = 0; i < r; i++)
+//     shares[i] = (double*)malloc(2*sizeof(double));
+//   for (int i = 0; i < r; i++) {
+//     shares[i][0] = i+1;
+//     shares[i][1] = share[(int)shares[i][0]-1];
+//   }
+//   for (int i = 0; i < r; i++)
+//     printf("[%.0f,%.0f] ",shares[i][0],shares[i][1]);
+//   Vec<ZZ> s;
+//   reconstruction_multiZZ(s, shares, r, l, t, q);
+//   cout << std::endl << s << std::endl;
+//   puts("");
+//   free(share);
+//   for (int i = 0; i < r; i++)
+//     free(shares[i]);
+//   free(shares);
+// }
 
 // // main for reconstruction_multi
 // int main(void) {
@@ -245,3 +250,83 @@ int main(void) {
 //     free(shares[i]);
 //   free(shares);
 // }
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////// Primes and all of that ////////////////////////////////
+
+void generator(ZZ_p& g, const ZZ& q) {
+  ZZ p;
+  ZZ_p po;
+  for (int i = 2; i < 2*q+1; i++) {
+    power(po,ZZ_p(i),2);
+    if (po == 1)
+      continue;
+    power(po,ZZ_p(i),q);
+    if (IsOne(po))
+      continue;
+    g = ZZ_p(i);
+    return;
+  }
+  return;
+}
+
+void change_modulus(ZZ& p) {
+  // ZZ_p::init(q);
+  cout << ZZ_p::modulus() << endl;
+  // ZZ_p::init(p);
+  ZZ_pPush push(p);
+  cout << ZZ_p::modulus() << endl;
+}
+// test sophie gremain prime with NTL
+int main(void) {
+  // ZZ q;
+  // GenGermainPrime(q,10);
+  // cout << "q = " << q << endl;
+  // ZZ_p::init(2*q+1);
+  // // ZZ_p g;
+  // // generator(g,q);
+  // // cout << "g = " << g << endl;
+  // Mat<ZZ_p> A;
+  // int n = 3, m = 4;
+  // A.SetDims(n,m);
+  // cout << "ok\n";
+  // for (int i = 1; i <= n; i++)
+  //   for (int j = 1; j <= m; j++)
+  //     A(i,j) = m*(i-1)+j;
+  // cout << "ok\n";
+  // cout << A << endl;
+  // ZZ_p::init(ZZ(11));
+  // ZZ_pX p;
+  // random(p,4);
+  // cout << p << endl;
+  // ZZ_p a;
+  // ZZ_p b;
+  // cin >> a;
+  // eval(b,p,a);
+  // cout << b << endl;
+  //
+  // ZZ_p in;
+  // for (int i = 1; i < 11; i++) {
+  //   inv(in,ZZ_p(i));
+  //   cout << i << " -> " << in << endl;
+  // }
+
+  ZZ p;
+  ZZ q;
+  // ZZ mod;
+  GenGermainPrime(q,10);
+  // q  = 7;
+  p = 2*q+1;
+  // q = 2;
+  cout << "q = " << q << "\np = " << p << endl;
+  ZZ_p::init(q);
+  cout << "mod in main -> " << ZZ_p::modulus() << endl;
+  change_modulus(p);
+  cout << "mod in main -> " << ZZ_p::modulus() << endl;
+  Vec<ZZ_p> v;
+  v.SetLength(5);
+  for (int i = 0; i < 5; i++)
+    v[i] = i;
+  cout << v << endl;
+  return EXIT_SUCCESS;
+}
