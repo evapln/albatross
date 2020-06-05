@@ -1,6 +1,7 @@
 #include <NTL/ZZ.h>
 #include <NTL/ZZ_p.h>
 #include <NTL/vector.h>
+#include <NTL/matrix.h>
 
 using namespace std;
 using namespace NTL;
@@ -34,3 +35,5 @@ void lambda(Mat<ZZ_p>& lamb, int t, pl_t *pl);
 
 /* reconstruct the secret vector */
 void reconstruction(Vec<ZZ>& S, const int r, pl_t *pl);
+
+void pvss(void);

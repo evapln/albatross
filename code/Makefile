@@ -1,16 +1,21 @@
 .PHONY = all scrape clean help
 EXE = pvss
-CPPFLAGS = -Wall -Wextra -pthread
-LDLIBS = -lm -lntl -lgmp
+# CPPFLAGS = -Wall -Wextra -pthread -g -O2
+CPPFLAGS = -Wall -Wextra -pthread -O3
+LDLIBS = -lntl -lgmp -lm
 
 .PHONY: all wave clean help
 
 all: scrape
 
-scrape: pvss.o
+scrape: ffte.o pvss.o main.o
 			$(CXX) $(CPPFLAGS) -o $@ $^ $(LDLIBS)
 
+ffte.o: ffte.cpp ffte.h
+
 pvss.o: pvss.cpp pvss.h
+
+main.o: main.cpp
 
 clean:
 			@rm -f *~ *.o scrape

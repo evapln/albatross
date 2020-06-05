@@ -1,4 +1,6 @@
 /* implementation of pvss protocol */
+// maximum size of q : 448
+
 #include <iostream>
 #include <cstdlib>
 #include <cstdbool>
@@ -7,7 +9,6 @@
 #include <unistd.h>
 
 #include <gmp.h>
-#include <NTL/matrix.h>
 #include <NTL/ZZ_pX.h>
 
 #include "pvss.h"
@@ -218,12 +219,12 @@ void reconstruction(const int r, pl_t *pl) {
   rec = true;
 }
 
-int main(void) {
+void pvss(void) {
   int n = 20;
   ZZ q;
-  GenGermainPrime(q,128);
+  GenGermainPrime(q,448);
   ZZ p = 2 * q + 1;
-  int t = 6;
+  int t = 5;
   int l = n-2*t;
   ZZ_p::init(p);
   ZZ_p g;
@@ -232,11 +233,10 @@ int main(void) {
   power(h,g,2);
   ZZ_p::init(q);
   Vec<ZZ_p> sk;
+  sk.SetLength(n);
   pl_t *pl = setup(sk,n,q,p,h);
-  if (!pl) {
-    cout << "oups";
-    return EXIT_FAILURE;
-  }
+  if (!pl)
+    return;
   cout << endl << "sk : " << sk << endl;
 
   distribution(l,t,pl);
@@ -257,7 +257,8 @@ int main(void) {
     int ind = rand() % len;
     int in = tab[ind];
     pl->sigtilde(i,1) = ZZ_p(in + 1);
-    inv(invsk[i],sk[in]);
+    cout << in << " ";
+    inv(invsk[i-1],sk[in]);
     choice[i] = in;
     len--;
     for (int j = ind; j < len; j++)
@@ -265,7 +266,7 @@ int main(void) {
   }
   ZZ_p::init(p);
   for (int i = 1; i <= r; i++) {
-    power(tmp,pl->sighat[choice[i]],rep(invsk[i]));
+    power(tmp,pl->sighat[choice[i]],rep(invsk[i-1]));
     pl->sigtilde(i,2) = tmp;
     // pl->DLEQ[i] = 0;
   }
@@ -275,12 +276,4 @@ int main(void) {
   pl_print(pl);
 
   pl_free(pl);
-  cout << "\n\n---------------------------------------------------------------------\n";
-
-  return EXIT_SUCCESS;
 }
-
-
-/* TODO :
-- implémentation figure 6 dans scrape++
- */
