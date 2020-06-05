@@ -1,4 +1,5 @@
 # SCRAPE++
 
-# optimizing and amortizing publicly verifiable randomness generation
-# Ignacio Cascudo and Bernardo David
+ optimizing and amortizing publicly verifiable randomness generation
+ 
+ Ignacio Cascudo and Bernardo David
