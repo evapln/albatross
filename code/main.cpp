@@ -20,13 +20,11 @@ int main(void) {
     random(coef[i]);
     power(L[i],h,rep(coef[i]));
   }
+  cout << "coef\n" << coef << endl;
+  cout << "L\n" << L << endl;
   Vec<ZZ_p> f;
   FFTE(f,n,L,w,q);
   cout << "f = " << f << endl;
   cout << "correct ? " << test(f,coef,h,w,n,q) << endl;
   return EXIT_SUCCESS;
 }
-
-/* TODO :
--> find the error in ffte
-*/

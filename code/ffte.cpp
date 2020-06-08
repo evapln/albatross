@@ -57,9 +57,10 @@ void FFTE(Vec<ZZ_p>& f, const long n, const Vec<ZZ_p>& h, const ZZ& w, const ZZ&
     hjm = h[j+m];
     u[j] = hj*hjm;
     inv(invhjm,hjm);
-    PowerMod(wj,w,j-1,q);
+    PowerMod(wj,w,j,q);
     mul (tmp, hj, invhjm);
     power(v[j], tmp, wj);
+    cout << j << " " << hjm << " " << invhjm << " " << tmp << " " << wj << endl;
   }
   Vec<ZZ_p> uhat;
   uhat.SetLength(m);
