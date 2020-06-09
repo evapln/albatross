@@ -1,24 +1,33 @@
-.PHONY = all scrape clean help
-EXE = pvss
-# CPPFLAGS = -Wall -Wextra -pthread -g -O2
-CPPFLAGS = -Wall -Wextra -pthread -O3
+.PHONY = all clean help
+
+TARGET = scrape
+SRCDIR = src
+INCDIR = include
+
+SRC = $(wildcard $(SRCDIR)/*.cpp)
+OBJ = $(SRC:.cpp=.o)
+
 LDLIBS = -lntl -lgmp -lm
+CXXFLAGS = -Wall -Wextra -pthread -O3
+# CXXFLAGS = -Wall -Wextra -pthread -g
+INCLUDES = -I$(INCDIR)
 
-.PHONY: all wave clean help
+all: $(TARGET)
 
-all: scrape
+$(TARGET): $(OBJ)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDLIBS)
 
-scrape: ffte.o pvss.o main.o
-			$(CXX) $(CPPFLAGS) -o $@ $^ $(LDLIBS)
+ffte.o: ../include/ffte.hpp
 
-ffte.o: ffte.cpp ffte.h
+pvss.o: ../include/pvss.hpp
 
-pvss.o: pvss.cpp pvss.h
+main.o: ../include/pvss.hpp ../include/ffte.hpp
 
-main.o: main.cpp
+%.o: %.cpp
+	$(CXX) $(CXXFLAGS) -c -o $@ $^ $(INCLUDES)
 
 clean:
-			@rm -f *~ *.o scrape
+	$(RM) $(OBJ) *~ $(TARGET)
 
 help:
 			@echo "Usage:"

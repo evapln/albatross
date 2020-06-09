@@ -1,5 +1,5 @@
-#include "ffte.h"
-#include "pvss.h"
+#include "../include/ffte.hpp"
+#include "../include/pvss.hpp"
 
 int main(void) {
   long n = 128;
@@ -20,8 +20,6 @@ int main(void) {
     random(coef[i]);
     power(L[i],h,rep(coef[i]));
   }
-  cout << "coef\n" << coef << endl;
-  cout << "L\n" << L << endl;
   Vec<ZZ_p> f;
   FFTE(f,n,L,w,q);
   cout << "f = " << f << endl;

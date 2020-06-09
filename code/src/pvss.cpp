@@ -11,7 +11,7 @@
 #include <gmp.h>
 #include <NTL/ZZ_pX.h>
 
-#include "pvss.h"
+#include "../include/pvss.hpp"
 
 // structures and variables
 bool dist = false;

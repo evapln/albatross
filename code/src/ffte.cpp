@@ -2,7 +2,7 @@
 #include <NTL/ZZ.h>
 #include <math.h>
 #include <stdbool.h>
-#include "ffte.h"
+#include "../include/ffte.hpp"
 
 using namespace std;
 
@@ -60,7 +60,6 @@ void FFTE(Vec<ZZ_p>& f, const long n, const Vec<ZZ_p>& h, const ZZ& w, const ZZ&
     PowerMod(wj,w,j,q);
     mul (tmp, hj, invhjm);
     power(v[j], tmp, wj);
-    cout << j << " " << hjm << " " << invhjm << " " << tmp << " " << wj << endl;
   }
   Vec<ZZ_p> uhat;
   uhat.SetLength(m);
