@@ -63,30 +63,30 @@ void pl_free(pl_t *pl) {
 
 void pl_print(pl_t *pl) {
   cout << "\n\n___________________________ Public Ledger ___________________________\n";
-  cout << pl->n << " participants" << endl;
-  cout << "q = " << pl->q << endl;
-  cout << "pk : " << pl->pk << endl;
-  if (dist) {
-    cout << endl << pl->t << " threshold" << endl;
-    cout << "shamir's shares :" << endl << pl->sig << endl;
-    cout << "encrypted shares :" << endl << pl->sighat << endl;
-    // if (pl->LDEI) {
-    //   cout << "      LDEI : ";
-    //   for (int i = 0; i < pl->n; i++)
-    //     cout << pl->LDEI[i] << " ";
-    // }
-    cout << endl;
-  }
+  // cout << pl->n << " participants" << endl;
+  // cout << "q = " << pl->q << endl;
+  // cout << "pk : " << pl->pk << endl;
+  // if (dist) {
+  //   cout << endl << pl->t << " threshold" << endl;
+  //   cout << "shamir's shares :" << endl << pl->sig << endl;
+  //   cout << "encrypted shares :" << endl << pl->sighat << endl;
+  //   // if (pl->LDEI) {
+  //   //   cout << "      LDEI : ";
+  //   //   for (int i = 0; i < pl->n; i++)
+  //   //     cout << pl->LDEI[i] << " ";
+  //   // }
+  //   cout << endl;
+  // }
   if (rec) {
-    cout << endl << pl->r << " parties want to reconstruct" << endl;
-    cout << "decrypted shares :" << endl;
-    for (int i = 1; i <= pl->r; i++)
-      cout << pl->sigtilde(i) << " ";
-    // if (pl->DLEQ) {
-    //   cout << endl << "      DLEQ : ";
-    //   for (int i = 0; i < pl->r; i++)
-    //     cout << pl->DLEQ[i] << " ";
-    // }
+    // cout << endl << pl->r << " parties want to reconstruct" << endl;
+    // cout << "decrypted shares :" << endl;
+    // for (int i = 1; i <= pl->r; i++)
+    //   cout << pl->sigtilde(i) << " ";
+    // // if (pl->DLEQ) {
+    // //   cout << endl << "      DLEQ : ";
+    // //   for (int i = 0; i < pl->r; i++)
+    // //     cout << pl->DLEQ[i] << " ";
+    // // }
     cout << "\n\nThe " << pl->l << " secrets are :\n" << pl->S << endl;
   }
   cout << "_____________________________________________________________________" << endl;
@@ -157,12 +157,12 @@ void distribution(const int l, const int t, pl_t *pl) {
     // pl->LDEI[i] = 0; // PREUVE A FAIRE
   }
   // print secrets for verification //////////////////////////
-  // cout << endl << "Secrets :";
+  cout << endl << "Secrets :";
   // computation of secrets
   for (int i = l-1; i >= 0; i--) {
     repzz = rep(s[i]);
     power(tmp,pl->h,repzz);
-    // cout << "S" << i << " = h^" << repzz << " = " << tmp << endl;
+    cout << "S" << i << " = h^" << repzz << " = " << tmp << endl;
   }
   dist = true;
 }
@@ -219,7 +219,7 @@ void reconstruction(const int r, pl_t *pl) {
 
 void pvss(void) {
   int n = 1024;
-  ZZ q = GenGermainPrime_ZZ(448);
+  ZZ q = GenGermainPrime_ZZ(1024);
   ZZ p = 2 * q + 1;
   int t = n/3;
   int l = n-2*t;
@@ -275,7 +275,7 @@ void pvss(void) {
   reconstruction(r, pl);
   reco_time = clock() - rec;
 
-  // pl_print(pl);
+  pl_print(pl);
 
   pl_free(pl);
   cout << "time for distribution: " << (float)dist_time/CLOCKS_PER_SEC << "s" << endl;
