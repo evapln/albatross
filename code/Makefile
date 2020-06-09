@@ -17,17 +17,16 @@ all: $(TARGET)
 $(TARGET): $(OBJ)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDLIBS)
 
-ffte.o: ../include/ffte.hpp
-
-pvss.o: ../include/pvss.hpp
-
-main.o: ../include/pvss.hpp ../include/ffte.hpp
-
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $^ $(INCLUDES)
 
+main.o: $(wildcare $(INCDIR)/*.hpp)
+ldei.o: ldei.hpp
+ffte.o: ffte.hpp
+pvss.o: pvss.hpp
+
 clean:
-	$(RM) $(OBJ) *~ $(TARGET)
+	@$(RM) $(OBJ) *~ $(TARGET)
 
 help:
 			@echo "Usage:"
