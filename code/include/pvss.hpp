@@ -37,3 +37,8 @@ void lambda(Mat<ZZ_p>& lamb, int t, pl_t *pl);
 void reconstruction(Vec<ZZ>& S, const int r, pl_t *pl);
 
 void pvss(void);
+
+/* times with q of size 448 n=1024
+      for one distribution -> about 0.2s
+      for one verification -> about 110s
+*/

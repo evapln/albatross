@@ -1,6 +1,4 @@
 /* implementation of pvss protocol */
-// maximum size of q : 448
-
 #include <iostream>
 #include <cstdlib>
 #include <cstdbool>
@@ -138,7 +136,7 @@ void distribution(const int l, const int t, pl_t *pl) {
     return;
   int deg = t + l;
   ZZ_pX P;
-  random(P,deg);
+  random(P, deg);
   pl->l = l;
   pl->t = t;
   Vec<ZZ_p> s;
@@ -159,12 +157,12 @@ void distribution(const int l, const int t, pl_t *pl) {
     // pl->LDEI[i] = 0; // PREUVE A FAIRE
   }
   // print secrets for verification //////////////////////////
-  cout << endl << "Secrets :";
+  // cout << endl << "Secrets :";
   // computation of secrets
   for (int i = l-1; i >= 0; i--) {
     repzz = rep(s[i]);
     power(tmp,pl->h,repzz);
-    cout << "S" << i << " = h^" << repzz << " = " << tmp << endl;
+    // cout << "S" << i << " = h^" << repzz << " = " << tmp << endl;
   }
   dist = true;
 }
@@ -220,11 +218,10 @@ void reconstruction(const int r, pl_t *pl) {
 }
 
 void pvss(void) {
-  int n = 20;
-  ZZ q;
-  GenGermainPrime(q,448);
+  int n = 1024;
+  ZZ q = GenGermainPrime_ZZ(448);
   ZZ p = 2 * q + 1;
-  int t = 5;
+  int t = n/3;
   int l = n-2*t;
   ZZ_p::init(p);
   ZZ_p g;
@@ -237,9 +234,12 @@ void pvss(void) {
   pl_t *pl = setup(sk,n,q,p,h);
   if (!pl)
     return;
-  cout << endl << "sk : " << sk << endl;
+  // cout << endl << "sk : " << sk << endl;
 
+  clock_t rec, dist_time, reco_time;
+  rec = clock();
   distribution(l,t,pl);
+  dist_time = clock() - rec;
 
   // choice of the r participants who want to recover the secret vector
   int tab[n];
@@ -257,7 +257,7 @@ void pvss(void) {
     int ind = rand() % len;
     int in = tab[ind];
     pl->sigtilde(i,1) = ZZ_p(in + 1);
-    cout << in << " ";
+    // cout << in << " ";
     inv(invsk[i-1],sk[in]);
     choice[i] = in;
     len--;
@@ -271,9 +271,13 @@ void pvss(void) {
     // pl->DLEQ[i] = 0;
   }
 
-
+  rec = clock();
   reconstruction(r, pl);
-  pl_print(pl);
+  reco_time = clock() - rec;
+
+  // pl_print(pl);
 
   pl_free(pl);
+  cout << "time for distribution: " << (float)dist_time/CLOCKS_PER_SEC << "s" << endl;
+  cout << "time for reconstrution: " << (float)reco_time/CLOCKS_PER_SEC << "s" << endl;
 }
