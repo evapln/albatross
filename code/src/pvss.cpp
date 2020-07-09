@@ -49,44 +49,46 @@ pl_t *pl_alloc(const int n) {
   pl->q = ZZ(0);
   pl->r = 0;
   pl->l = 0;
-  pl->pk.SetLength(n);
-  pl->sig.SetLength(n);
-  pl->sighat.SetLength(n);
+  pl->pk.FixLength(n);
+  pl->sig.FixLength(n);
+  pl->sighat.FixLength(n);
   return pl;
 }
 
 void pl_free(pl_t *pl) {
   if (pl) {
+    pl->q.kill();
+    pl->sigtilde.kill();
     delete pl;
   }
 }
 
 void pl_print(pl_t *pl) {
   cout << "\n\n___________________________ Public Ledger ___________________________\n";
-  // cout << pl->n << " participants" << endl;
-  // cout << "q = " << pl->q << endl;
-  // cout << "pk : " << pl->pk << endl;
-  // if (dist) {
-  //   cout << endl << pl->t << " threshold" << endl;
-  //   cout << "shamir's shares :" << endl << pl->sig << endl;
-  //   cout << "encrypted shares :" << endl << pl->sighat << endl;
-  //   // if (pl->LDEI) {
-  //   //   cout << "      LDEI : ";
-  //   //   for (int i = 0; i < pl->n; i++)
-  //   //     cout << pl->LDEI[i] << " ";
-  //   // }
-  //   cout << endl;
-  // }
+  cout << pl->n << " participants" << endl;
+  cout << "q = " << pl->q << endl;
+  cout << "pk : " << pl->pk << endl;
+  if (dist) {
+    cout << endl << pl->t << " threshold" << endl;
+    cout << "shamir's shares :" << endl << pl->sig << endl;
+    cout << "encrypted shares :" << endl << pl->sighat << endl;
+    // if (pl->LDEI) {
+    //   cout << "      LDEI : ";
+    //   for (int i = 0; i < pl->n; i++)
+    //     cout << pl->LDEI[i] << " ";
+    // }
+    cout << endl;
+  }
   if (rec) {
-    // cout << endl << pl->r << " parties want to reconstruct" << endl;
-    // cout << "decrypted shares :" << endl;
-    // for (int i = 1; i <= pl->r; i++)
-    //   cout << pl->sigtilde(i) << " ";
-    // // if (pl->DLEQ) {
-    // //   cout << endl << "      DLEQ : ";
-    // //   for (int i = 0; i < pl->r; i++)
-    // //     cout << pl->DLEQ[i] << " ";
-    // // }
+    cout << endl << pl->r << " parties want to reconstruct" << endl;
+    cout << "decrypted shares :" << endl;
+    for (int i = 1; i <= pl->r; i++)
+      cout << pl->sigtilde(i) << " ";
+    // if (pl->DLEQ) {
+    //   cout << endl << "      DLEQ : ";
+    //   for (int i = 0; i < pl->r; i++)
+    //     cout << pl->DLEQ[i] << " ";
+    // }
     cout << "\n\nThe " << pl->l << " secrets are :\n" << pl->S << endl;
   }
   cout << "_____________________________________________________________________" << endl;
@@ -109,7 +111,7 @@ void generator(ZZ_p& g, const ZZ& q) {
 
 pl_t *setup(Vec<ZZ_p>& sk, const int n, const ZZ& q, const ZZ& p, const ZZ_p& h) {
   ZZ_p s;
-  sk.SetLength(n);
+  sk.FixLength(n);
   for (int i = 0; i < n; i++) {
     random(s);
     while (IsZero(s))
@@ -165,6 +167,7 @@ void distribution(const int l, const int t, pl_t *pl) {
     cout << "S" << i << " = h^" << repzz << " = " << tmp << endl;
   }
   dist = true;
+  s.kill();
 }
 
 void lambda(Mat<ZZ_p>& lambs, int t, pl_t *pl) {
@@ -198,7 +201,7 @@ void reconstruction(const int r, pl_t *pl) {
   if (r < t) // error : not enough parts
     return;
   // verification of proof DLEQ
-  pl->S.SetLength(pl->l);
+  pl->S.FixLength(pl->l);
   ZZ_pPush push(pl->q);
   Mat<ZZ_p> lambs;
   lambda(lambs, t, pl);
@@ -215,11 +218,13 @@ void reconstruction(const int r, pl_t *pl) {
   }
   pl->r = r;
   rec = true;
+  lambs.kill();
 }
 
 void pvss(void) {
   int n = 1024;
-  ZZ q = GenGermainPrime_ZZ(1024);
+  ZZ q;
+  GenGermainPrime(q,1024);
   ZZ p = 2 * q + 1;
   int t = n/3;
   int l = n-2*t;
@@ -230,7 +235,6 @@ void pvss(void) {
   power(h,g,2);
   ZZ_p::init(q);
   Vec<ZZ_p> sk;
-  sk.SetLength(n);
   pl_t *pl = setup(sk,n,q,p,h);
   if (!pl)
     return;
@@ -270,6 +274,7 @@ void pvss(void) {
     pl->sigtilde(i,2) = tmp;
     // pl->DLEQ[i] = 0;
   }
+  invsk.kill();
 
   rec = clock();
   reconstruction(r, pl);
@@ -278,6 +283,8 @@ void pvss(void) {
   pl_print(pl);
 
   pl_free(pl);
+  q.kill();
+
   cout << "time for distribution: " << (float)dist_time/CLOCKS_PER_SEC << "s" << endl;
   cout << "time for reconstrution: " << (float)reco_time/CLOCKS_PER_SEC << "s" << endl;
 }

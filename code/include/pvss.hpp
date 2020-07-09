@@ -40,8 +40,8 @@ void pvss(void);
 
 /*  times with q of size 448 n=1024
       for one distribution -> about 0.2s
-      for one verification -> about 110s
+      for one reconstruction -> about 110s
     times with q of size 1024 n=1024
       for one distribution -> about 0.9s
-      for one verification -> about 300s
+      for one reconstruction -> about 300s
 */
