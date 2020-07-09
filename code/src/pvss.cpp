@@ -94,6 +94,7 @@ void pl_print(pl_t *pl) {
   cout << "_____________________________________________________________________" << endl;
 }
 
+// in ZZp
 void generator(ZZ_p& g, const ZZ& q) {
   ZZ_p po;
   for (int i = 2; i < 2*q+1; i++) {

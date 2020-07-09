@@ -19,7 +19,7 @@ void pl_free(pl_t *pl);
 /* print the public ledger */
 void pl_print(pl_t *pl);
 
-/* compute a generator of the multiplicative group Zq */
+/* compute a generator of the multiplicative group Zp* with p = 2q+1 */
 void generator(ZZ_p& g, const ZZ& q);
 
 /* setup return the public ledger
