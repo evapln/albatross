@@ -1,13 +1,13 @@
 .PHONY = all clean help
 
-TARGET = scrape
+TARGET = albatross
 SRCDIR = src
 INCDIR = include
 
 SRC = $(wildcard $(SRCDIR)/*.cpp)
 OBJ = $(SRC:.cpp=.o)
 
-LDLIBS = -lntl -lgmp -lm
+LDLIBS = -lntl -lgmp -lm -lcryptopp
 CXXFLAGS = -Wall -Wextra -pthread -O3
 # CXXFLAGS = -Wall -Wextra -pthread -g
 INCLUDES = -I$(INCDIR)
@@ -21,9 +21,10 @@ $(TARGET): $(OBJ)
 	$(CXX) $(CXXFLAGS) -c -o $@ $^ $(INCLUDES)
 
 main.o: $(wildcare $(INCDIR)/*.hpp)
-ldei.o: ldei.hpp
+ldei.o: ldei.hpp hash.hpp
 ffte.o: ffte.hpp
 pvss.o: pvss.hpp
+hash.o: hash.hpp
 
 clean:
 	@$(RM) $(OBJ) *~ $(TARGET)
