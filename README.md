@@ -1,5 +1,5 @@
-# SCRAPE++
+# ALBATROSS implementation
 
- optimizing and amortizing publicly verifiable randomness generation
- 
+publicly AttestabLe BATched Randomness based On Secret Sharing
+
  Ignacio Cascudo and Bernardo David
