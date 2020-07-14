@@ -1,7 +1,8 @@
 #include <cryptopp/sha3.h>
 #include <sstream>
 #include <string>
-#include "../include/hash.hpp"
+
+#include "hash.hpp"
 
 using namespace CryptoPP;
 

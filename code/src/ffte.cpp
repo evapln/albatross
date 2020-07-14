@@ -2,7 +2,8 @@
 #include <NTL/ZZ.h>
 #include <math.h>
 #include <stdbool.h>
-#include "../include/ffte.hpp"
+
+#include "ffte.hpp"
 
 using namespace std;
 
