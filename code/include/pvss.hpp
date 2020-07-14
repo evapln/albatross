@@ -28,7 +28,7 @@ pl_t *setup(Vec<ZZ_p>& sk, const int n, const ZZ& q, const ZZ& p, const ZZ_p& h)
 
 /* t threshold, l number of secrets
 add the encrypted shares in he public ledger */
-void distribution(const int l, const int t, pl_t *pl);
+void distribution(const int l, const int t, const Vec<ZZ_p>& alpha, pl_t *pl);
 
 /* compute the list of lambda to compute the secrets */
 void lambda(Mat<ZZ_p>& lamb, int t, pl_t *pl);
