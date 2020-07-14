@@ -9,7 +9,8 @@
 #include <gmp.h>
 #include <NTL/ZZ_pX.h>
 
-#include "../include/pvss.hpp"
+#include "pvss.hpp"
+#include "ldei.hpp"
 
 // structures and variables
 bool dist = false;
@@ -25,9 +26,9 @@ struct pl_t {
   Vec<ZZ_p> pk; // publi keys
   Vec<ZZ_p> sig; // shamir's shares
   Vec<ZZ_p> sighat; // encrypted shares
-  int *LDEI;
+  ldei_t *LDEI; //proof LDEI
   Mat<ZZ_p> sigtilde; // decrypted shares and their index
-  int *DLEQ;
+  // int *DLEQ;
   Vec<ZZ_p> S; // secrets reconstructed
 };
 
@@ -49,16 +50,21 @@ pl_t *pl_alloc(const int n) {
   pl->q = ZZ(0);
   pl->r = 0;
   pl->l = 0;
-  pl->pk.FixLength(n);
-  pl->sig.FixLength(n);
-  pl->sighat.FixLength(n);
+  pl->pk.SetLength(n);
+  pl->sig.SetLength(n);
+  pl->sighat.SetLength(n);
+  pl->LDEI = ldei_alloc(n);
   return pl;
 }
 
 void pl_free(pl_t *pl) {
   if (pl) {
     pl->q.kill();
+    pl->pk.kill();
+    pl->sig.kill();
+    pl->sighat.kill();
     pl->sigtilde.kill();
+    ldei_free(pl->LDEI);
     delete pl;
   }
 }
@@ -72,11 +78,8 @@ void pl_print(pl_t *pl) {
     cout << endl << pl->t << " threshold" << endl;
     cout << "shamir's shares :" << endl << pl->sig << endl;
     cout << "encrypted shares :" << endl << pl->sighat << endl;
-    // if (pl->LDEI) {
-    //   cout << "      LDEI : ";
-    //   for (int i = 0; i < pl->n; i++)
-    //     cout << pl->LDEI[i] << " ";
-    // }
+    if (pl->LDEI)
+      ldei_print(pl->LDEI);
     cout << endl;
   }
   if (rec) {
@@ -112,7 +115,7 @@ void generator(ZZ_p& g, const ZZ& q) {
 
 pl_t *setup(Vec<ZZ_p>& sk, const int n, const ZZ& q, const ZZ& p, const ZZ_p& h) {
   ZZ_p s;
-  sk.FixLength(n);
+  sk.SetLength(n);
   for (int i = 0; i < n; i++) {
     random(s);
     while (IsZero(s))
@@ -134,7 +137,7 @@ pl_t *setup(Vec<ZZ_p>& sk, const int n, const ZZ& q, const ZZ& p, const ZZ_p& h)
   return pl;
 }
 
-void distribution(const int l, const int t, pl_t *pl) {
+void distribution(const int l, const int t, const Vec<ZZ_p>& alpha, pl_t *pl) {
   if (!pl || t < 1 || t > pl->n)
     return;
   int deg = t + l;
@@ -152,20 +155,21 @@ void distribution(const int l, const int t, pl_t *pl) {
   }
   ZZ p = 2 * pl->q + 1;
   ZZ_pPush push(p);
-  // attribution of the shamir's shares their values and computation of encrypted shares
+  // attribution of the shamir's shares their values, computation of encrypted shares
+  // and proof ldei
   for (int i = 0; i < pl->n; i++) {
     pl->sig[i] = s[i+l];
     repzz = rep(s[i+l]);
     power(pl->sighat[i],pl->pk[i],repzz);
-    // pl->LDEI[i] = 0; // PREUVE A FAIRE
   }
+  pl->LDEI = ldei_prove(pl->q, p, pl->pk, alpha, deg, pl->sighat, P);
   // print secrets for verification //////////////////////////
-  cout << endl << "Secrets :";
+  // cout << endl << "Secrets :";
   // computation of secrets
   for (int i = l-1; i >= 0; i--) {
     repzz = rep(s[i]);
     power(tmp,pl->h,repzz);
-    cout << "S" << i << " = h^" << repzz << " = " << tmp << endl;
+    // cout << "S" << i << " = h^" << repzz << " = " << tmp << endl;
   }
   dist = true;
   s.kill();
@@ -223,6 +227,12 @@ void reconstruction(const int r, pl_t *pl) {
 }
 
 void pvss(void) {
+
+  clock_t rec0, rec, setup_time, dist_time, ldeiverif_time, decrypt_time,
+    dleqverif_time, reco_time, recoverif_time, all_time;
+  rec0 = clock();
+
+  // PARAMETERS
   int n = 1024;
   ZZ q;
   GenGermainPrime(q,1024);
@@ -234,19 +244,35 @@ void pvss(void) {
   generator(g,p);
   ZZ_p h;
   power(h,g,2);
+
+  // SET UP
   ZZ_p::init(q);
   Vec<ZZ_p> sk;
+  rec = clock();
   pl_t *pl = setup(sk,n,q,p,h);
+  setup_time = clock() - rec;
   if (!pl)
     return;
   // cout << endl << "sk : " << sk << endl;
 
-  clock_t rec, dist_time, reco_time;
+
+  // DISTRIBUTION
+  Vec<ZZ_p> alpha;
+  alpha.SetLength(pl->n);
+  for (int i = 0; i < pl->n; i++)
+    alpha[i] = ZZ_p(i+1);
   rec = clock();
-  distribution(l,t,pl);
+  distribution(l,t,alpha,pl);
   dist_time = clock() - rec;
 
-  // choice of the r participants who want to recover the secret vector
+  // VERIFICATION
+  rec = clock();
+  if (ldei_verify(pl->LDEI, q, p, pl->pk, alpha, t+l, pl->sighat) == false)
+    return;
+  ldeiverif_time = clock() - rec;
+
+  // SHARE OF DECRYPTED SHARES AND PROOF DLEQ
+  // choice of participant wanting to reconstruct
   int tab[n];
   int len = n;
   int r = n - t;
@@ -269,23 +295,45 @@ void pvss(void) {
     for (int j = ind; j < len; j++)
       tab[j] = tab[j+1];
   }
+  // computations
   ZZ_p::init(p);
+  rec = clock();
   for (int i = 1; i <= r; i++) {
     power(tmp,pl->sighat[choice[i]],rep(invsk[i-1]));
     pl->sigtilde(i,2) = tmp;
     // pl->DLEQ[i] = 0;
   }
+  decrypt_time = clock() - rec;
   invsk.kill();
 
+
+  // VERIFICATION OF PROOF DLEQ
+  rec = clock();
+  dleqverif_time = clock() - rec;
+
+  // RECONSTRUCTION
   rec = clock();
   reconstruction(r, pl);
   reco_time = clock() - rec;
-
   pl_print(pl);
 
+  // RECONSTRUCTINO VERIFICATION
+  rec = clock();
+  recoverif_time = clock() - rec;
+
+
+  // CLEAN UP
   pl_free(pl);
   q.kill();
 
-  cout << "time for distribution: " << (float)dist_time/CLOCKS_PER_SEC << "s" << endl;
-  cout << "time for reconstrution: " << (float)reco_time/CLOCKS_PER_SEC << "s" << endl;
+  // TIME
+  all_time = clock() - rec0;
+  cout << "time for seting up: " << (float)setup_time/CLOCKS_PER_SEC << "s" << endl;
+  cout << "time for distributing: " << (float)dist_time/CLOCKS_PER_SEC << "s" << endl;
+  cout << "time for verifying ldei: " << (float)ldeiverif_time/CLOCKS_PER_SEC << "s" << endl;
+  cout << "time for sharing decrypted shares with dleq: " << (float)decrypt_time/CLOCKS_PER_SEC << "s" << endl;
+  cout << "time for verifying dleq: " << (float)dleqverif_time/CLOCKS_PER_SEC << "s" << endl;
+  cout << "time for reconstructing the secrets: " << (float)reco_time/CLOCKS_PER_SEC << "s" << endl;
+  cout << "time for verifying the reconstruction: " << (float)recoverif_time/CLOCKS_PER_SEC << "s" << endl;
+  cout << "time for doing all these things: " << (float)all_time/CLOCKS_PER_SEC << "s" << endl;
 }

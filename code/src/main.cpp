@@ -1,7 +1,7 @@
-#include "../include/ffte.hpp"
-#include "../include/pvss.hpp"
-#include "../include/ldei.hpp"
-#include "../include/hash.hpp"
+#include "ffte.hpp"
+#include "pvss.hpp"
+#include "ldei.hpp"
+#include "hash.hpp"
 
 
 #include <iostream>
@@ -96,9 +96,9 @@ int main(void) {
   // cout << "correct ? " << test(f,coef,h,w,n,q) << endl;
   // cout << "time: " << (float)FFTE_time/CLOCKS_PER_SEC << "s" << endl;
 
-  // // test pvss
-  // cout << "pvss" << endl;
-  // pvss();
+  // test pvss
+  cout << "pvss" << endl;
+  pvss();
 
   // test Local LDEI
   // cout << "Local LDEI" << endl;
@@ -143,85 +143,85 @@ int main(void) {
   // cout << "It's " << verif2 << " in " << (float)time2/CLOCKS_PER_SEC << " second(s).\n";
 
   // test LDEI
-  cout << "LDEI" << endl;
-  long m = 1024, k = 9;
-  ZZ q = GenGermainPrime_ZZ(1024);
-  ZZ p = 2 * q + 1;
-  ZZ_p::init(q);
-  Vec<ZZ_p> alpha = vect_rand_dist(m);
-  ZZ_pX P = random_ZZ_pX(k+1);
-  Vec<ZZ_p> P_eval = eval(P,alpha);
-
-  ZZ_p::init(p);
-  Vec<ZZ_p> gens;
-  generators(gens, q, m);
-  if (gens.length() != m)
-    return EXIT_FAILURE;
-  Vec<ZZ_p> h;
-  h.SetLength(m);
-  for (int i = 0; i < m; i++)
-    power(h[i], gens[i], 2);
-  Vec<ZZ_p> x;
-  x.SetLength(m);
-  for (int i = 0; i < m; i++)
-    power(x[i],h[i],rep(P_eval[i]));
-
-  clock_t rec;
-  rec = clock();
-  ldei_t *ld = ldei_prove(q, p, h, alpha, k, x, P);
-  rec = clock() - rec;
-  cout << (float)rec/CLOCKS_PER_SEC << "s\n";
-  cout << "should be true : ";
-  ldei_verify(ld, q, p, h, alpha, k, x);
-
-  ldei_t* copy1 = ldei_copy(ld, m);
-  ldei_t* copy2 = ldei_copy(ld, m);
-  ldei_t* copy3 = ldei_copy(ld, m);
-  ldei_t* copy4 = ldei_copy(ld, m);
-  ldei_free(ld);
-  ZZ_p::init(q);
-
-
-  ZZ_p ef = random_ZZ_p();
-  ldei_set_e(copy1, ef);
-  cout << "should be false from hash: ";
-  rec = clock();
-  ldei_verify(copy1, q, p, h, alpha, k, x);
-  rec = clock() - rec;
-  cout << (float)rec/CLOCKS_PER_SEC << "s\n";
-  ldei_free(copy1);
-
-  ZZ_pX zf = random_ZZ_pX(k+1);
-  ldei_set_z(copy2, zf);
-  cout << "should be false from ai: ";
-  rec = clock();
-  ldei_verify(copy2, q, p, h, alpha, k, x);
-  rec = clock() - rec;
-  cout << (float)rec/CLOCKS_PER_SEC << "s\n";
-  ldei_free(copy2);
-
-  Vec<ZZ_p> af;
-  af.SetLength(m);
-  for (int i = 0 ; i < m; i++)
-    random(af[i]);
-  ldei_set_a(copy3, af);
-  cout << "should be false from hash: ";
-  rec = clock();
-  ldei_verify(copy3, q, p, h, alpha, k, x);
-  rec = clock() - rec;
-  cout << (float)rec/CLOCKS_PER_SEC << "s\n";
-  ldei_free(copy3);
-
-  af.SetLength(m+1);
-  for (int i = 0 ; i < m+1; i++)
-    random(af[i]);
-  ldei_set_a(copy4, af);
-  cout << "should be false from lengths: ";
-  rec = clock();
-  ldei_verify(copy4, q, p, h, alpha, k, x);
-  rec = clock() - rec;
-  cout << (float)rec/CLOCKS_PER_SEC << "s\n";
-  ldei_free(copy4);
+  // cout << "LDEI" << endl;
+  // long m = 1024, k = 9;
+  // ZZ q = GenGermainPrime_ZZ(1024);
+  // ZZ p = 2 * q + 1;
+  // ZZ_p::init(q);
+  // Vec<ZZ_p> alpha = vect_rand_dist(m);
+  // ZZ_pX P = random_ZZ_pX(k+1);
+  // Vec<ZZ_p> P_eval = eval(P,alpha);
+  //
+  // ZZ_p::init(p);
+  // Vec<ZZ_p> gens;
+  // generators(gens, q, m);
+  // if (gens.length() != m)
+  //   return EXIT_FAILURE;
+  // Vec<ZZ_p> h;
+  // h.SetLength(m);
+  // for (int i = 0; i < m; i++)
+  //   power(h[i], gens[i], 2);
+  // Vec<ZZ_p> x;
+  // x.SetLength(m);
+  // for (int i = 0; i < m; i++)
+  //   power(x[i],h[i],rep(P_eval[i]));
+  //
+  // clock_t rec;
+  // rec = clock();
+  // ldei_t *ld = ldei_prove(q, p, h, alpha, k, x, P);
+  // rec = clock() - rec;
+  // cout << (float)rec/CLOCKS_PER_SEC << "s\n";
+  // cout << "should be true : ";
+  // ldei_verify(ld, q, p, h, alpha, k, x);
+  //
+  // ldei_t* copy1 = ldei_copy(ld, m);
+  // ldei_t* copy2 = ldei_copy(ld, m);
+  // ldei_t* copy3 = ldei_copy(ld, m);
+  // ldei_t* copy4 = ldei_copy(ld, m);
+  // ldei_free(ld);
+  // ZZ_p::init(q);
+  //
+  //
+  // ZZ_p ef = random_ZZ_p();
+  // ldei_set_e(copy1, ef);
+  // cout << "should be false from hash: ";
+  // rec = clock();
+  // ldei_verify(copy1, q, p, h, alpha, k, x);
+  // rec = clock() - rec;
+  // cout << (float)rec/CLOCKS_PER_SEC << "s\n";
+  // ldei_free(copy1);
+  //
+  // ZZ_pX zf = random_ZZ_pX(k+1);
+  // ldei_set_z(copy2, zf);
+  // cout << "should be false from ai: ";
+  // rec = clock();
+  // ldei_verify(copy2, q, p, h, alpha, k, x);
+  // rec = clock() - rec;
+  // cout << (float)rec/CLOCKS_PER_SEC << "s\n";
+  // ldei_free(copy2);
+  //
+  // Vec<ZZ_p> af;
+  // af.SetLength(m);
+  // for (int i = 0 ; i < m; i++)
+  //   random(af[i]);
+  // ldei_set_a(copy3, af);
+  // cout << "should be false from hash: ";
+  // rec = clock();
+  // ldei_verify(copy3, q, p, h, alpha, k, x);
+  // rec = clock() - rec;
+  // cout << (float)rec/CLOCKS_PER_SEC << "s\n";
+  // ldei_free(copy3);
+  //
+  // af.SetLength(m+1);
+  // for (int i = 0 ; i < m+1; i++)
+  //   random(af[i]);
+  // ldei_set_a(copy4, af);
+  // cout << "should be false from lengths: ";
+  // rec = clock();
+  // ldei_verify(copy4, q, p, h, alpha, k, x);
+  // rec = clock() - rec;
+  // cout << (float)rec/CLOCKS_PER_SEC << "s\n";
+  // ldei_free(copy4);
 
 
 
