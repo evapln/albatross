@@ -1,6 +1,7 @@
 #include <NTL/ZZ.h>
 #include <NTL/ZZ_p.h>
 #include <NTL/vector.h>
+#include <NTL/ZZ_pX.h>
 
 using namespace std;
 using namespace NTL;
@@ -21,11 +22,12 @@ typedef struct ldei_t ldei_t;
 
 ldei_t *ldei_alloc(const int m);
 
-
+/* v only for test v */
 ldei_t* ldei_copy(ldei_t* src, int m);
 void ldei_set_a(ldei_t* ld, Vec<ZZ_p>& a);
 void ldei_set_e(ldei_t* ld, ZZ_p& e);
 void ldei_set_z(ldei_t* ld, ZZ_pX& z);
+/* ^ only for test ^ */
 
 void ldei_free(ldei_t *ld);
 

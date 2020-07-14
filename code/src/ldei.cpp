@@ -1,5 +1,4 @@
 #include <cstdbool>
-#include <NTL/ZZ_pX.h>
 
 #include "ldei.hpp"
 #include "hash.hpp"
@@ -45,6 +44,7 @@ void ldei_set_e(ldei_t* ld, ZZ_p& e) {
 void ldei_set_z(ldei_t* ld, ZZ_pX& z) {
   ld->z = z;
 }
+/* ^ only for test ^ */
 
 void ldei_free(ldei_t *ld) {
   if (ld) {
@@ -52,14 +52,14 @@ void ldei_free(ldei_t *ld) {
     delete ld;
   }
 }
-/* ^ only for test ^ */
+
 
 
 void ldei_print(ldei_t *ld) {
-  cout << "ldei proof:\n a = " << ld->a << "\n e = " << ld->e << "\n z = " << ld->z << endl;
+  cout << "\n a = " << ld->a << "\n e = " << ld->e << "\n z = " << ld->z << endl;
 }
 
-// in ZZq (in the field)
+// in ZZq
 ldei_t* ldei_prove(const ZZ& q, const ZZ& p, const Vec<ZZ_p>& g, const Vec<ZZ_p>& alpha,
 const long k, const Vec<ZZ_p>& x, const ZZ_pX& P) {
   ZZ_p::init(q);
