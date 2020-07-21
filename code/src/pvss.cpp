@@ -5,12 +5,13 @@
 #include <ctime>
 #include <cmath>
 #include <unistd.h>
+#include <vector>
 
 #include <gmp.h>
 #include <NTL/ZZ_pX.h>
 
 #include "pvss.hpp"
-#include "ldei.hpp"
+#include "proofs.hpp"
 
 // structures and variables
 bool dist = false;
@@ -26,9 +27,10 @@ struct pl_t {
   Vec<ZZ_p> pk; // publi keys
   Vec<ZZ_p> sig; // shamir's shares
   Vec<ZZ_p> sighat; // encrypted shares
-  ldei_t *LDEI; //proof LDEI
-  Mat<ZZ_p> sigtilde; // decrypted shares and their index
-  // int *DLEQ;
+  LDEI ld; //proof LDEI
+  int *reco_parties;
+  Vec<ZZ_p> sigtilde; // decrypted shares and their index
+  vector<DLEQ> dl; // proof DLEQ
   Vec<ZZ_p> S; // secrets reconstructed
 };
 
@@ -53,7 +55,6 @@ pl_t *pl_alloc(const int n) {
   pl->pk.SetLength(n);
   pl->sig.SetLength(n);
   pl->sighat.SetLength(n);
-  pl->LDEI = ldei_alloc(n);
   return pl;
 }
 
@@ -64,7 +65,8 @@ void pl_free(pl_t *pl) {
     pl->sig.kill();
     pl->sighat.kill();
     pl->sigtilde.kill();
-    ldei_free(pl->LDEI);
+    delete pl->reco_parties;
+    pl->sigtilde.kill();
     delete pl;
   }
 }
@@ -78,19 +80,19 @@ void pl_print(pl_t *pl) {
     cout << endl << pl->t << " threshold" << endl;
     cout << "shamir's shares :" << endl << pl->sig << endl;
     cout << "encrypted shares :" << endl << pl->sighat << endl;
-    if (pl->LDEI)
-      ldei_print(pl->LDEI);
+    pl->ld.print();
     cout << endl;
   }
   if (rec) {
     cout << endl << pl->r << " parties want to reconstruct" << endl;
     cout << "decrypted shares :" << endl;
-    for (int i = 1; i <= pl->r; i++)
-      cout << pl->sigtilde(i) << " ";
-    // if (pl->DLEQ) {
-    //   cout << endl << "      DLEQ : ";
-    //   for (int i = 0; i < pl->r; i++)
-    //     cout << pl->DLEQ[i] << " ";
+    for (int i = 0; i < pl->r; i++)
+      cout << pl->reco_parties[i] << " ";
+    cout << endl << pl->sigtilde << endl;
+    // int len = pl->dl.size();
+    // for (int i = 0; i < len; i++) {
+    //   cout << "dleq number " << i << endl;
+    //   pl->dl[i].print();
     // }
     cout << "\n\nThe " << pl->l << " secrets are :\n" << pl->S << endl;
   }
@@ -162,14 +164,15 @@ void distribution(const int l, const int t, const Vec<ZZ_p>& alpha, pl_t *pl) {
     repzz = rep(s[i+l]);
     power(pl->sighat[i],pl->pk[i],repzz);
   }
-  pl->LDEI = ldei_prove(pl->q, p, pl->pk, alpha, deg, pl->sighat, P);
+  pl->ld.prove(pl->q, p, pl->pk, alpha, deg, pl->sighat, P);
+
   // print secrets for verification //////////////////////////
-  // cout << endl << "Secrets :";
+  // cout << endl << "Secrets :\n";
   // computation of secrets
   for (int i = l-1; i >= 0; i--) {
-    repzz = rep(s[i]);
+    repzz = rep(s[l-1-i]);
     power(tmp,pl->h,repzz);
-    // cout << "S" << i << " = h^" << repzz << " = " << tmp << endl;
+    // cout << "S" << i << " = " << tmp << endl;
   }
   dist = true;
   s.kill();
@@ -183,18 +186,18 @@ void lambda(Mat<ZZ_p>& lambs, int t, pl_t *pl) {
   ZZ_p tmp;
   ZZ_p invden;
   for (int j = 0; j < pl->l; j++) {
-    for (int i = 1; i <= t; i++) {
+    for (int i = 0; i < t; i++) {
       num = ZZ_p(1); den = ZZ_p(1);
-      for (int m = 1; m <= t; m++)
+      for (int m = 0; m < t; m++)
         if (m != i) {
-          sub(tmp,- ZZ_p(j),pl->sigtilde(m,1));
+          sub(tmp,- ZZ_p(j),ZZ_p(pl->reco_parties[m]));
           mul(num, num, tmp);
-          sub(tmp, pl->sigtilde(i,1), pl->sigtilde(m,1));
+          sub(tmp, pl->reco_parties[i], ZZ_p(pl->reco_parties[m]));
           mul(den, den, tmp);
         }
       inv(invden,den);
       mul(mu,num,invden);
-      conv(lambs(i,j+1),mu);
+      conv(lambs[i][j],mu);
     }
   }
 }
@@ -205,8 +208,7 @@ void reconstruction(const int r, pl_t *pl) {
   int t = pl->n - pl->t;
   if (r < t) // error : not enough parts
     return;
-  // verification of proof DLEQ
-  pl->S.FixLength(pl->l);
+  pl->S.SetLength(pl->l);
   ZZ_pPush push(pl->q);
   Mat<ZZ_p> lambs;
   lambda(lambs, t, pl);
@@ -214,11 +216,11 @@ void reconstruction(const int r, pl_t *pl) {
   ZZ_p::init(2 * pl->q + 1);
   ZZ_p tmp;
   for (int j = 0; j < pl->l; j++) {
-    pl->S[j] = ZZ_p(1);
-    for (int i = 1; i <= t; i++) {
-      lamb = rep(lambs(i,j+1));
-      power(tmp,pl->sigtilde(i,2),lamb);
-      mul(pl->S[j], pl->S[j], tmp);
+    pl->S[pl->l-j-1] = ZZ_p(1);
+    for (int i = 0; i < t; i++) {
+      lamb = rep(lambs[i][j]);
+      power(tmp,pl->sigtilde[i],lamb);
+      mul(pl->S[pl->l-j-1], pl->S[pl->l-j-1], tmp);
     }
   }
   pl->r = r;
@@ -226,7 +228,7 @@ void reconstruction(const int r, pl_t *pl) {
   lambs.kill();
 }
 
-void pvss(void) {
+void pvss_test(void) {
 
   clock_t rec0, rec, setup_time, dist_time, ldeiverif_time, decrypt_time,
     dleqverif_time, reco_time, recoverif_time, all_time;
@@ -234,16 +236,17 @@ void pvss(void) {
 
   // PARAMETERS
   int n = 1024;
+  int size = 1024;
   ZZ q;
-  GenGermainPrime(q,1024);
+  GenGermainPrime(q,size);
   ZZ p = 2 * q + 1;
   int t = n/3;
   int l = n-2*t;
   ZZ_p::init(p);
-  ZZ_p g;
-  generator(g,p);
+  ZZ_p gen;
+  generator(gen,p);
   ZZ_p h;
-  power(h,g,2);
+  power(h,gen,2);
 
   // SET UP
   ZZ_p::init(q);
@@ -267,8 +270,11 @@ void pvss(void) {
 
   // VERIFICATION
   rec = clock();
-  if (ldei_verify(pl->LDEI, q, p, pl->pk, alpha, t+l, pl->sighat) == false)
+  if (!(pl->ld.verify(q, p, pl->pk, alpha, t+l, pl->sighat))) {
+    cout << "The proof LDEI isn't correct..." << endl;
     return;
+  }
+  cout << "The proof LDEI is correct" << endl;
   ldeiverif_time = clock() - rec;
 
   // SHARE OF DECRYPTED SHARES AND PROOF DLEQ
@@ -276,39 +282,53 @@ void pvss(void) {
   int tab[n];
   int len = n;
   int r = n - t;
-  int choice[r];
-  pl->sigtilde.SetDims(r,2);
+  pl->sigtilde.SetLength(r);
+  pl->reco_parties = new int[r];
   Vec<ZZ_p> invsk;
   invsk.SetLength(r);
-  ZZ_p tmp;
   prng_init(time(NULL) + getpid());
   for (int i = 0; i < len; i++)
     tab[i] = i;
-  for (int i = 1; i <= r; i++) {
+  for (int i = 0; i < r; i++) {
     int ind = rand() % len;
     int in = tab[ind];
-    pl->sigtilde(i,1) = ZZ_p(in + 1);
-    // cout << in << " ";
-    inv(invsk[i-1],sk[in]);
-    choice[i] = in;
+    pl->reco_parties[i] = in + 1;
+    inv(invsk[i],sk[in]);
     len--;
     for (int j = ind; j < len; j++)
       tab[j] = tab[j+1];
   }
   // computations
   ZZ_p::init(p);
+  Mat<ZZ_p> g;
+  g.SetDims(r,2);
+  Mat<ZZ_p> x;
+  x.SetDims(r,2);
   rec = clock();
-  for (int i = 1; i <= r; i++) {
-    power(tmp,pl->sighat[choice[i]],rep(invsk[i-1]));
-    pl->sigtilde(i,2) = tmp;
-    // pl->DLEQ[i] = 0;
+  int id;
+  for (int i = 0; i < r; i++) {
+    id = pl->reco_parties[i];
+    x[i][0] = h;
+    g[i][1] = pl->sighat[id-1];
+    power(x[i][1],g[i][1],rep(invsk[i]));
+    pl->sigtilde[i] = x[i][1];
+    g[i][0]= pl->pk[id-1];
+    pl->dl.push_back(DLEQ());
+    pl->dl[i].prove(q,p,g[i],x[i],invsk[i]);
   }
   decrypt_time = clock() - rec;
   invsk.kill();
 
-
   // VERIFICATION OF PROOF DLEQ
   rec = clock();
+  for (int i = 0; i < r; i ++) {
+    if(!pl->dl[i].verify(q,p,g[i],x[i])) {
+      cout << "At least one of the proofs DLEQ isn't correct..." << endl;
+      return;
+    }
+  }
+  cout << "All the proofs DLEQ are correct" << endl;
+
   dleqverif_time = clock() - rec;
 
   // RECONSTRUCTION
@@ -318,7 +338,28 @@ void pvss(void) {
   pl_print(pl);
 
   // RECONSTRUCTINO VERIFICATION
+  ZZ_p::init(q);
+  Vec<ZZ_p> alphaverif;
+  alphaverif.SetLength(r+l);
+  for (int j = 0; j < l; j++)
+    alphaverif[j] = ZZ_p(j-l+1);
+  for (int j = l; j < r+l; j++)
+    alphaverif[j] = pl->reco_parties[j-l];
+  ZZ_p::init(p);
+  Vec<ZZ_p> xverif;
+  xverif.SetLength(r+l);
+  for (int j = 0; j < l; j++) {
+    xverif[j] = pl->S[j];
+  }
+  for (int j = l; j < r+l; j++) {
+    xverif[j] = pl->sigtilde[j-l];
+  }
   rec = clock();
+  if (!(localldei(q,p,alphaverif,t+l,xverif,r+l))) {
+    cout << "The reconstruction isn't correct..." << endl;
+    return;
+  }
+  cout << "Congrats! The reconstruction is correct!" << endl;
   recoverif_time = clock() - rec;
 
 
@@ -328,6 +369,7 @@ void pvss(void) {
 
   // TIME
   all_time = clock() - rec0;
+  cout << "times for q of " << size << " bits and " << n << " participants : \n";
   cout << "time for seting up: " << (float)setup_time/CLOCKS_PER_SEC << "s" << endl;
   cout << "time for distributing: " << (float)dist_time/CLOCKS_PER_SEC << "s" << endl;
   cout << "time for verifying ldei: " << (float)ldeiverif_time/CLOCKS_PER_SEC << "s" << endl;

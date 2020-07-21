@@ -36,7 +36,7 @@ void lambda(Mat<ZZ_p>& lamb, int t, pl_t *pl);
 /* reconstruct the secret vector */
 void reconstruction(Vec<ZZ>& S, const int r, pl_t *pl);
 
-void pvss(void);
+void pvss_test(void);
 
 /*  times with q of size 448 n=1024
       for one distribution -> about 0.2s

@@ -8,7 +8,7 @@ SRC = $(wildcard $(SRCDIR)/*.cpp)
 OBJ = $(SRC:.cpp=.o)
 
 LDLIBS = -lntl -lgmp -lm -lcryptopp
-CXXFLAGS = -Wall -Wextra -O3 -std=c++11 -pthread -march=native 
+CXXFLAGS = -Wall -Wextra -O3 -std=c++11 -pthread -march=native
 # CXXFLAGS = -Wall -Wextra -pthread -g
 INCLUDES = -I$(INCDIR)
 
@@ -22,9 +22,9 @@ $(TARGET): $(OBJ)
 
 main.o: $(wildcare $(INCDIR)/*.hpp)
 hash.o: hash.hpp
-ldei.o: ldei.hpp hash.hpp
+proofs.o: proofs.hpp hash.hpp
 ffte.o: ffte.hpp
-pvss.o: pvss.hpp ldei.hpp
+pvss.o: pvss.hpp proofs.hpp
 
 clean:
 	@$(RM) $(OBJ) *~ $(TARGET)

@@ -49,6 +49,52 @@ string ZZp_to_string(const Vec<ZZ_p>& x, const Vec<ZZ_p>& a) {
   return  s;
 }
 
+string ZZp_to_string(const Vec<ZZ_p>& g, const Vec<ZZ_p>& x, const Vec<ZZ_p>& a) {
+  stringstream vecg, vecx, veca;
+  string vecgg, vecxx, vecaa, s = "";
+  char c;
+  vecg << g;
+  vecgg = vecg.str();
+  for (size_t i = 0; i < vecgg.length(); i++) {
+    c = vecgg[i];
+    switch(c) {
+      case '[':
+      case ']':
+      case ' ':
+        break;
+      default:
+        s.push_back(c);
+    }
+  }
+  vecx << x;
+  vecxx = vecx.str();
+  for (size_t i = 0; i < vecxx.length(); i++) {
+    c = vecxx[i];
+    switch(c) {
+      case '[':
+      case ']':
+      case ' ':
+        break;
+      default:
+        s.push_back(c);
+    }
+  }
+  veca << a;
+  vecaa = veca.str();
+  for (size_t i = 0; i < vecaa.length(); i++) {
+      c = vecaa[i];
+      switch(c) {
+        case '[':
+        case ']':
+        case ' ':
+          break;
+        default:
+          s.push_back(c);
+      }
+    }
+  return  s;
+}
+
 string sha3_512(const string msg) {
 	string digest;
 	SHA3_512 hash;
@@ -60,6 +106,12 @@ string sha3_512(const string msg) {
 
 void hash_ZZp(ZZ_p& hashzz, const Vec<ZZ_p>& x, const Vec<ZZ_p>& a) {
   string msg = ZZp_to_string(x,a);
+	string digest = sha3_512(msg);
+  string_to_ZZp(hashzz, digest);
+}
+
+void hash_ZZp(ZZ_p& hashzz, const Vec<ZZ_p>& g, const Vec<ZZ_p>& x, const Vec<ZZ_p>& a) {
+  string msg = ZZp_to_string(g,x,a);
 	string digest = sha3_512(msg);
   string_to_ZZp(hashzz, digest);
 }
