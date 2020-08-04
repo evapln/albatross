@@ -68,7 +68,7 @@ string string_to_hex(const string& input) {
 }
 
 int main(void) {
-  // // test ffte
+  //////////////////////////////////////////////////////////////////// test ffte
   // cout << "ffte" << endl;
   // long n = 1024;
   // long k = 102;
@@ -96,12 +96,12 @@ int main(void) {
   // cout << "correct ? " << test(f,coef,h,w,n,q) << endl;
   // cout << "time: " << (float)FFTE_time/CLOCKS_PER_SEC << "s" << endl;
 
-  // test pvss
-  cout << "pvss" << endl;
-  pvss_test();
+  //////////////////////////////////////////////////////////////////// test pvss
+  // cout << "pvss" << endl;
+  // pvss_test();
 
 
-  // // test DLEQ
+  //////////////////////////////////////////////////////////////////// test DLEQ
   // cout << "DLEQ" << endl;
   // ZZ q = GenGermainPrime_ZZ(10);
   // ZZ p = 2 * q + 1;
@@ -125,7 +125,7 @@ int main(void) {
   // cout << dl.verify(q,p,g,x) << endl;
 
 
-  // test Local LDEI
+  ////////////////////////////////////////////////////////////// test Local LDEI
   // cout << "Local LDEI vec" << endl;
   // long m = 1024, k = 764;
   // ZZ q = GenGermainPrime_ZZ(1024);
@@ -214,7 +214,7 @@ int main(void) {
   // cout << "It's " << verif1 << " in " << (float)time1/CLOCKS_PER_SEC << " second(s).\n";
   // cout << "It's " << verif2 << " in " << (float)time2/CLOCKS_PER_SEC << " second(s).\n";
 
-  // // test LDEI
+  //////////////////////////////////////////////////////////////////// test LDEI
   // cout << "LDEI" << endl;
   // long m = 1024, k = 9;
   // ZZ q = GenGermainPrime_ZZ(1024);
@@ -248,7 +248,7 @@ int main(void) {
   // cout << (float)rec/CLOCKS_PER_SEC << "s\n";
 
 
-  // // test hash
+  //////////////////////////////////////////////////////////////////// test hash
   // cout << "hash" << endl;
   // long k = 102;
   // long l = 1024 - k;
@@ -282,6 +282,158 @@ int main(void) {
   // hash_ZZp(out, x, a);
   // cout << out << endl;
 
-  // return
+  //////////////////////////////////////////////////////////////// test mat bool
+  // int n = 128, k = 20;
+  // Mat<bool> M;
+  // M.SetDims(k,n);
+  // prng_init(time(NULL));
+  // for (int i = 0; i < k; i++) {
+  //   for (int j = 0; j < n; j++)
+  //     M[i][j] = rand() % 2;
+  // }
+  //
+  // for (int i = 0; i < k; i++) {
+  //   for (int j = 0; j < n; j++)
+  //     cout << M[i][j] << " ";
+  //   cout << endl;
+  // }
+  //
+  ///////////////////////////////////////////////////////// test mat mat_set_row
+  // Vec<bool> row;
+  // row.SetLength(n);
+  // for (int i = 0; i < n; i++)
+  //   row[i] = rand() % 2;
+  // cout << "we set this row in pos 4 : " << row << endl;
+  // mat_set_row(M, 4, row);
+  //
+  // for (int i = 0; i < k; i++) {
+  //   for (int j = 0; j < n; j++)
+  //     cout << M[i][j] << " ";
+  //   cout << endl;
+  // }
+
+
+  ////////////////////////////////////////////////////////////// tes vec_is_zero
+  // bool test1, test2;
+  // test1 = vec_is_zero(row);
+  // Vec<bool> zero;
+  // zero.SetLength(n);
+  // for (int i = 0; i < n; i++)
+  //   zero[i] = 0;
+  // test2 = vec_is_zero(zero);
+  // cout << "should be 0 : " << test1 << endl;
+  // cout << "should be 1 : " << test2 << endl;
+  //
+  // test vec_is_in_mat
+  // Vec<bool> r0, r;
+  // r0.SetLength(n);
+  // r.SetLength(n);
+  // for (int i = 0; i <n; i++) {
+  //   r0[i] = M[2][i];
+  //   r[i] = rand() %2 ;
+  // }
+  // for (int i = 0; i < k; i++) {
+  //   for (int j = 0; j < n; j++)
+  //     cout << M[i][j] << " ";
+  //   cout << endl;
+  // }
+  // cout << "r0 " << r0 << " ";
+  // cout << vec_is_in_mat(M,r0) << endl;
+  // cout << "r " << r << " ";
+  // cout << vec_is_in_mat(M,r) << endl;
+  //
+  // // test mat gen and space_add_row
+  // Mat<bool> mat;
+  // cout << mat_gen(mat,n,k) << endl;
+  // for (int i = 0; i < k; i++) {
+  //   for (int j = 0; j < n; j++)
+  //     cout << mat[i][j] << " ";
+  //   cout << endl;
+  // }
+
+
+  ///////////////////////////////////////////////////////////////// test mul_mat
+  // ZZ q = GenGermainPrime_ZZ(n);
+  // ZZ_p::init(q);
+  // Vec<ZZ_p> hhat;
+  // Vec<ZZ_p> h;
+  // h.SetLength(n);
+  // for (int i = 0; i < n; i++)
+  //  random(h[i]);
+  // cout << "q = " << q << "\nh " << h << endl;
+  // mul_mat(hhat,mat,n,k,h);
+  // if (hhat.length() == 0)
+  //   return EXIT_FAILURE;
+  // cout << "hhat " << hhat << endl;
+
+  /////////////////////////////////////////////////// comparision FFTE / mul_mat
+  int n = 2048, k = 16, t = 10, l = n-2*t;
+  ZZ p,q;
+  findprime(k,l,q,p);
+  ZZ w;
+  rootunity(w,n,q);
+  // ZZ q = GenGermainPrime_ZZ(128);
+  // cout << q << endl;
+  ZZ_p::init(p);
+  Mat<ZZ_p> M;
+  clock_t rec, tsame = 0, tdif = 0, tffte = 0;
+  int m = 10;
+  Vec<ZZ_p> vech;
+  Vec<ZZ_p> hhat;
+  Vec<ZZ_p> f;
+  vech.SetLength(n);
+  ZZ_p h {4};
+
+
+  Vec<ZZ_p> L, coef;
+  L.SetLength(n);
+  coef.SetLength(n);
+
+  // test time m computations with the same matrix
+  mat_gen(M,n,k);
+  for (int i = 0; i < m; i++) {
+    // new vector
+    for (int j = 0; j < n; j++)
+     random(vech[i]);
+
+    rec = clock();
+    mul_mat(hhat,M,n,k,vech);
+    tsame += clock() - rec;
+  }
+
+  // test time m computations with the same matrix
+  for (int i = 0; i < m; i++) {
+    // new matrix
+    mat_gen(M,n,k);
+    // new vector
+    for (int j = 0; j < n; j++)
+     random(vech[i]);
+
+    rec = clock();
+    mul_mat(hhat,M,n,k,vech);
+    tdif += clock() - rec;
+  }
+
+  // test ffte
+  for (int i = 0; i < m; i++) {
+    // new vector
+    for (int i = 0; i < n; i++) {
+      random(coef[i]);
+      power(L[i],h,rep(coef[i]));
+    }
+
+    rec = clock();
+    FFTE(f, n, L, w, q);
+    tffte += clock() - rec;
+  }
+
+  cout << "same matrix, " << m << " computations : " << (float)tsame/CLOCKS_PER_SEC << " second(s).\n";
+  cout << "different matrices, " << m << " computations : " << (float)tdif/CLOCKS_PER_SEC << " second(s).\n";
+  cout << "ffte, " << m << " computations : " << (float)tffte/CLOCKS_PER_SEC << " second(s).\n";
+
+
+
+
+  /////////////////////////////////////////////////////////////////////// return
   return EXIT_SUCCESS;
 }

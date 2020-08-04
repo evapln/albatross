@@ -1,6 +1,7 @@
 #include <NTL/ZZ.h>
 #include <NTL/ZZ_p.h>
 #include <NTL/vector.h>
+#include <NTL/matrix.h>
 
 
 using namespace NTL;
@@ -13,4 +14,22 @@ void evalu(ZZ& sum, const Vec<ZZ_p>& L, const ZZ& x, const ZZ& q);
 bool test(const Vec<ZZ_p>& W, const Vec<ZZ_p>& coef, const ZZ_p& h, const ZZ& w,
           const long n, const ZZ& q);
 
-/* time for one call to FFTE with q of size 1024 and n=1024 -> about 2s */
+
+int mat_set_row(Mat<bool>& M, const int i, const Vec<bool>& vec);
+bool vec_is_zero(const Vec<ZZ_p>& vec);
+// bool vec_is_in_mat(const Mat<bool>& M, const Vec<bool>& v);
+
+// int space_add_row(Mat<bool>& S, const int i, const Vec<bool>& r);
+
+void mat_exchange_row(Mat<ZZ_p>& M, const int row1, const int row2);
+void mat_sub_row(Mat<ZZ_p>& M, const int row1, const int row2);
+void mat_systematisation(Mat<ZZ_p>& M, const int row);
+bool is_ind(const Mat<ZZ_p>& M, const int row);
+// return a non zero binary vector of length n
+Vec<ZZ_p> bin_rand_vec(const int n);
+void bin_rand_vec(Vec<ZZ_p>& vec, const int n);
+
+// int mat_gen_space(Mat<bool>& M, const int n, const int k);
+void mat_gen(Mat<ZZ_p>& M, const int n, const int k);
+
+void mul_mat(Vec<ZZ_p>& hhat, Mat<ZZ_p>& M, const int n, const int k, const Vec<ZZ_p>& h);
