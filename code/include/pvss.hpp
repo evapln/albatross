@@ -8,7 +8,6 @@ using namespace NTL;
 
 typedef struct pl_t pl_t;
 
-void prng_init(const unsigned int seed);
 
 /* allocate the memory for the publice ledger */
 pl_t *pl_alloc(const int n);

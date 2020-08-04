@@ -12,6 +12,7 @@
 
 #include "pvss.hpp"
 #include "proofs.hpp"
+#include "func.hpp"
 
 // structures and variables
 bool dist = false;
@@ -34,13 +35,6 @@ struct pl_t {
   Vec<ZZ_p> S; // secrets reconstructed
 };
 
-void prng_init(const unsigned int seed) {
-  static bool seed_init = false;
-  if (! seed_init) {
-    srand(seed);
-    seed_init = true;
-  }
-}
 
 pl_t *pl_alloc(const int n) {
   pl_t *pl;
@@ -328,7 +322,6 @@ void pvss_test(void) {
     }
   }
   cout << "All the proofs DLEQ are correct" << endl;
-
   dleqverif_time = clock() - rec;
 
   // RECONSTRUCTION
