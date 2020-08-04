@@ -21,10 +21,11 @@ $(TARGET): $(OBJ)
 	$(CXX) $(CXXFLAGS) -c -o $@ $^ $(INCLUDES)
 
 main.o: $(wildcare $(INCDIR)/*.hpp)
+hash.o: func.hpp
 hash.o: hash.hpp
 proofs.o: proofs.hpp hash.hpp
-ffte.o: ffte.hpp
-pvss.o: pvss.hpp proofs.hpp
+ffte.o: ffte.hpp func.hpp
+pvss.o: pvss.hpp proofs.hpp func.hpp
 
 clean:
 	@$(RM) $(OBJ) *~ $(TARGET)
