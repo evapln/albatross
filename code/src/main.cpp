@@ -367,10 +367,9 @@ int main(void) {
   // cout << "hhat " << hhat << endl;
 
   /////////////////////////////////////////////////// comparision FFTE / mul_mat
-  int n = 2048, k = 16;
+  int n = 2048, k = 16, t = 10, l = n-2*t;
   ZZ p,q;
-  findprime(100,28,q,p);
-  cout << q << endl;
+  findprime(k,l,q,p);
   ZZ w;
   rootunity(w,n,q);
   // ZZ q = GenGermainPrime_ZZ(128);
@@ -378,7 +377,7 @@ int main(void) {
   ZZ_p::init(p);
   Mat<ZZ_p> M;
   clock_t rec, tsame = 0, tdif = 0, tffte = 0;
-  int m = 1000;
+  int m = 10;
   Vec<ZZ_p> vech;
   Vec<ZZ_p> hhat;
   Vec<ZZ_p> f;
