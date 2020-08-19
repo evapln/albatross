@@ -20,8 +20,10 @@ string ZZp_to_string(const Vec<ZZ_p>& x, const Vec<ZZ_p>& a) {
   stringstream vecx, veca;
   string vecxx, vecaa, s = "";
   char c;
-  vecx << x;
-  vecxx = vecx.str();
+  for (ZZ_p xi : x) {
+    vecx << xi;
+    vecxx = vecxx + vecx.str();
+  }
   for (size_t i = 0; i < vecxx.length(); i++) {
     c = vecxx[i];
     switch(c) {

@@ -30,26 +30,20 @@ const long k, const Vec<ZZ_p>& x, const ZZ_pX& P) {
     //create the vector a
     ZZ_pX R = random_ZZ_pX(k+1);
     Vec<ZZ_p> R_eval = eval(R, alpha);
-
     ZZ_p::init(p);
-
     // create proof structure
-    // proof_t *ld = proof_alloc(m);
     a.SetLength(m);
-
-    for (int i = 0; i < m; i++) {
+    for (int i = 0; i < m; i++)
       power(a[i], g[i], rep(R_eval[i]));
-    }
-
     // in ZZq
     ZZ_pPush push(q);
-
     // create e the digest of the hash function
     hash_ZZp(e, x, a);
-
     // create z the polynomial of ld
     ZZ_pX tmp = e * P;
     z = tmp + R;
+    //clean up
+    R_eval.kill();
   }
 }
 
@@ -61,15 +55,12 @@ const long k, const Vec<ZZ_p>& x) {
     cout << "Verification not passed: bad length\n";
     return false;
   }
-
   // test degree polynomial
   if (deg(z) > k) {
     cout << "Verification not passed: bad degree of z\n";
     return false;
   }
-
   ZZ_p::init(q);
-
   // test of e = hash(x,a)
   ZZ_p hashzz;
   hash_ZZp(hashzz, x, a);
@@ -77,7 +68,6 @@ const long k, const Vec<ZZ_p>& x) {
     cout << "Verification not passed: bad digest\n";
     return false;
   }
-
   // test of x_i^e * a_i = g_i^z(alpha_i)
   Vec<ZZ_p> zi = eval(z, alpha);
   ZZ_pPush push(p);
@@ -88,10 +78,11 @@ const long k, const Vec<ZZ_p>& x) {
     mul(tmp1, tmp3, a[i]);
     if (tmp2 != tmp1) {
       cout << "Verification not passed: bad a_i\n";
+      zi.kill();
       return false;
     }
   }
-
+  zi.kill();
   return true;
 }
 
@@ -379,7 +370,6 @@ bool DLEQ::verify(const ZZ& q, const ZZ& p, const Vec<ZZ_p>& g, const Vec<ZZ_p>&
 // in ZZq
 bool localldei(const ZZ& q, const ZZ& p, const Vec<ZZ_p>& alpha, const long k, const Vec<ZZ_p>& x,
 const long m) {
-
   ZZ_p::init(q);
   // computation of vector u
   Vec<ZZ_p> u;
@@ -394,11 +384,9 @@ const long m) {
       }
     inv(u[i],prod);
   }
-
   // random polynomial
   ZZ_pX P;
   do random(P,m-k-1); while(IsZero(P));
-
   // computation of v
   Vec<ZZ_p> v;
   v.SetLength(m);
@@ -406,9 +394,6 @@ const long m) {
     eval(tmp, P, alpha[i]);
     mul(v[i], u[i], tmp);
   }
-
-
-
   // verification
   ZZ_pPush push(p);
   prod = 1;
@@ -416,5 +401,6 @@ const long m) {
     power(tmp, x[i], rep(v[i]));
     prod *= tmp;
   }
+  v.kill();
   return (IsOne(prod));
 }

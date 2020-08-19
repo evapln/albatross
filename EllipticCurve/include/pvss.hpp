@@ -27,19 +27,19 @@ void pl_print(pl_t *pl);
 
 /* setup return the public ledger
 and create the public keys and secret keys for n participants */
-pl_t *setup(bn_t* sk, const int n, bn_t q);
+clock_t setup(pl_t* pl, bn_t* sk, const int n, bn_t q);
 
 /* set y = P(x) with P polynomila of degree deg */
 void apply_poly(bn_t y, const bn_t *P, const int deg, const int x, bn_t q);
 
 /* t threshold, l number of secrets
 add the encrypted shares in he public ledger */
-void distribution(const int l, const int t, pl_t *pl, bn_t q);
+clock_t distribution(const int l, const int t, pl_t *pl, bn_t q);
 
 /* compute the list of lambda to compute the secrets */
 void lambda(bn_t** lambs, const int t, pl_t *pl, bn_t q);
 
 /* reconstruct the secret vector */
-void reconstruction(const int r, pl_t *pl, bn_t q);
+clock_t reconstruction(const int r, pl_t *pl, bn_t q);
 
 void pvss_test(void);

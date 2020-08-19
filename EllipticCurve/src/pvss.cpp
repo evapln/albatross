@@ -93,7 +93,8 @@ void pl_print(pl_t *pl) {
 ////////////////////////////////// scheme //////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-pl_t *setup(bn_t* sk, const int n, bn_t q) {
+clock_t setup(pl_t* pl, bn_t* sk, const int n, bn_t q) {
+  clock_t time = 0, timetmp;
   for (int i = 0; i < n; i++) {
     bn_new(sk[i]);
     bn_rand_mod(sk[i],q);
@@ -102,15 +103,14 @@ pl_t *setup(bn_t* sk, const int n, bn_t q) {
       bn_rand_mod(sk[i],q);
     }
   }
-  pl_t * pl = pl_alloc(n);
-  if (!pl)
-    return NULL;
   for (int i = 0; i < n; i++) {
+    timetmp = clock();
     ec_mul_gen(pl->pk[i],sk[i]);
+    time += clock() - timetmp;
   }
   pl->n = n;
   bn_free(tmp);
-  return pl;
+  return time;
 }
 
 void apply_poly(bn_t y, const bn_t *P, const int deg, const int x, bn_t q) {
@@ -139,9 +139,9 @@ void apply_poly(bn_t y, const bn_t *P, const int deg, const int x, bn_t q) {
   bn_free(tmp);
 }
 
-void distribution(const int l, const int t, pl_t *pl, bn_t q) {
+clock_t distribution(const int l, const int t, pl_t *pl, bn_t q) {
   if (!pl || t < 1 || t > pl->n)
-    return;
+    return 0;
   int deg = t + l;
   // random polynomila of Fp
   bn_t *P = new bn_t[deg];
@@ -155,13 +155,16 @@ void distribution(const int l, const int t, pl_t *pl, bn_t q) {
     apply_poly(s[i+l-1],P,deg,i,q);
   }
 
+  clock_t time = 0, timetmp;
   // attribution of the shamir's shares their values, computation of encrypted shares
   // and proof ldei
   pl->sig = new bn_t[pl->n];
   pl->sighat = new ec_t[pl->n];
   for (int i = 0; i < pl->n; i++) {
     bn_copy(pl->sig[i],s[i+l]);
+    timetmp = clock();
     ec_mul(pl->sighat[i],pl->pk[i],s[i+l]);
+    time += clock() - timetmp;
   }
   // pl->ld.prove(pl->q, p, pl->pk, alpha, deg, pl->sighat, P);
 
@@ -180,6 +183,7 @@ void distribution(const int l, const int t, pl_t *pl, bn_t q) {
   delete[] s;
   delete[] P;
   ec_free(etmp);
+  return time;
 }
 
 void lambda(bn_t** lambs, const int t, pl_t *pl, bn_t q) {
@@ -224,20 +228,19 @@ void lambda(bn_t** lambs, const int t, pl_t *pl, bn_t q) {
   bn_free(tmp2);
 }
 
-void reconstruction(const int r, pl_t *pl, bn_t q) {
+clock_t reconstruction(const int r, pl_t *pl, bn_t q) {
   if (!pl) // error : the public ledger doesn't exist
-    return;
+    return 0;
   int t = pl->n - pl->t;
   if (r < t) // error : not enough parts
-    return;
+    return 0;
   pl->S = new ec_t[pl->l];
   bn_t** lambs;
   lambs = new bn_t*[t];
   for (int i = 0; i < t; ++i)
     lambs[i] = new bn_t[pl->l];
-  clock_t time_lambda = clock();
+  clock_t time = 0, timetmp;
   lambda(lambs,t,pl,q);
-  time_lambda = clock() - time_lambda;
   ec_t tmp;
   ec_null(tmp);
   for (int j = 0; j < pl->l; j++) {
@@ -245,11 +248,15 @@ void reconstruction(const int r, pl_t *pl, bn_t q) {
     // ec_mul(tmp,pl->sigtilde[0],lambs[0][j]);
     // ec_copy(pl->S[pl->l-j-1], tmp);
     ec_new(pl->S[pl->l-j-1]);
+    timetmp = clock();
     ec_mul(pl->S[pl->l-j-1],pl->sigtilde[0],lambs[0][j]);
+    time += clock() - timetmp;
     for (int i = 1; i < t; i++) {
       ec_new(tmp);
+      timetmp = clock();
       ec_mul(tmp,pl->sigtilde[i],lambs[i][j]);
       ec_add(pl->S[pl->l-j-1], pl->S[pl->l-j-1], tmp);
+      time += clock() - timetmp;
     }
   }
   for (int i = 0; i < t; ++i)
@@ -258,7 +265,7 @@ void reconstruction(const int r, pl_t *pl, bn_t q) {
   pl->r = r;
   ec_free(tmp);
   rec = true;
-  cout << "time for computing the lambdas: " << (float)time_lambda/CLOCKS_PER_SEC << "s" << endl;
+  return time;
 }
 
 void pvss_test(void) {
@@ -288,30 +295,27 @@ void pvss_test(void) {
   ec_curve_get_ord(q);
 
   /////////////////////////////////////////////////////////// times declarations
-  clock_t rec0, rec, setup_time, dist_time, decrypt_time, reco_time, all_time;
-  rec0 = clock();
+  clock_t timetmp, setup_time, dist_time, decrypt_time, reco_time, all_time;
 
   /////////////////////////////////////////////////////////////////// PARAMETERS
   int n = 200;
   int t = n/3;
   int l = n-2*t;
 
-  cout << "\n\ntimes for " << n << " participants with elliptic curves:\n\n";
   /////////////////////////////////////////////////////////////////////// SET UP
   bn_t* sk;
   sk = new bn_t[n];
-  rec = clock();
-  pl_t *pl = setup(sk,n,q);
-  setup_time = clock() - rec;
+  pl_t * pl = pl_alloc(n);
+  if (!pl)
+    return;
+  setup_time = setup(pl,sk,n,q);
   if (!pl)
     return;
   // pl_print(pl);
 
 
   ///////////////////////////////////////////////////////////////// DISTRIBUTION
-  rec = clock();
-  distribution(l,t,pl,q);
-  dist_time = clock() - rec;
+  dist_time = distribution(l,t,pl,q);
 
   ///////////////////////////////////// SHARE OF DECRYPTED SHARES AND PROOF DLEQ
   // choice of participant wanting to reconstruct
@@ -338,18 +342,16 @@ void pvss_test(void) {
       tab[j] = tab[j+1];
   }
   // computations
-  rec = clock();
   int id;
   for (int i = 0; i < r; i++) {
     id = pl->reco_parties[i];
+    timetmp = clock();
     ec_mul(pl->sigtilde[i],pl->sighat[id-1], invsk[i]);
+    decrypt_time = clock() - timetmp;
   }
-  decrypt_time = clock() - rec;
 
   /////////////////////////////////////////////////////////////// RECONSTRUCTION
-  rec = clock();
-  reconstruction(r,pl,q);
-  reco_time = clock() - rec;
+  reco_time = reconstruction(r,pl,q);
   // pl_print(pl);
 
   ///////////////////////////////////////////////////////////////////// CLEAN UP
@@ -358,11 +360,13 @@ void pvss_test(void) {
   delete[] invsk;
   core_clean();
 
+  all_time = setup_time + dist_time + decrypt_time + reco_time;
   //////////////////////////////////////////////////////////////////////// TIMES
-  all_time = clock() - rec0;
-  cout << "time for seting up: " << (float)setup_time/CLOCKS_PER_SEC << "s" << endl;
-  cout << "time for distributing: " << (float)dist_time/CLOCKS_PER_SEC << "s" << endl;
-  cout << "time for sharing decrypted shares: " << (float)decrypt_time/CLOCKS_PER_SEC << "s" << endl;
-  cout << "time for reconstructing the secrets: " << (float)reco_time/CLOCKS_PER_SEC << "s" << endl;
-  cout << "\nglobal time: " << (float)all_time/CLOCKS_PER_SEC << "s" << endl << endl;
+  cout << "\n\ntimes for " << n << " participants with elliptic curves:\n\n";
+  cout << "time for seting up: " << (float)setup_time/CLOCKS_PER_SEC << "s\n";
+  cout << "time for distributing: " << (float)dist_time/CLOCKS_PER_SEC << "s\n";
+  cout << "time for sharing decrypted shares: " << (float)decrypt_time/CLOCKS_PER_SEC << "s\n";
+  cout << "time for reconstructing the secrets: " << (float)reco_time/CLOCKS_PER_SEC << "s\n";
+  cout << "\nglobal time: " << (float)all_time/CLOCKS_PER_SEC << "s\n\n";
+  cout << "here we only timed elementary operations and we didn't time the proofs\n\n";
 }

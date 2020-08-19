@@ -9,6 +9,10 @@ using namespace NTL;
 typedef struct pl_t pl_t;
 
 
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////// public ledger /////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
 /* allocate the memory for the publice ledger */
 pl_t *pl_alloc(const int n);
 
@@ -18,22 +22,31 @@ void pl_free(pl_t *pl);
 /* print the public ledger */
 void pl_print(pl_t *pl);
 
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////// scheme //////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
 /* compute a generator of the multiplicative group Zp* with p = 2q+1 */
 void generator(ZZ_p& g, const ZZ& q);
 
 /* setup return the public ledger
 and create the public keys and secret keys for n participants */
-pl_t *setup(Vec<ZZ_p>& sk, const int n, const ZZ& q, const ZZ& p, const ZZ_p& h);
+clock_t setup(pl_t* pl, Vec<ZZ_p>& sk, const int n, const ZZ& q, const ZZ& p, const ZZ_p& h);
 
 /* t threshold, l number of secrets
 add the encrypted shares in he public ledger */
-void distribution(const int l, const int t, const Vec<ZZ_p>& alpha, pl_t *pl);
+clock_t distribution(const int l, const int t, const Vec<ZZ_p>& alpha, pl_t *pl);
 
 /* compute the list of lambda to compute the secrets */
 void lambda(Mat<ZZ_p>& lamb, const int t, pl_t *pl);
 
 /* reconstruct the secret vector */
-void reconstruction(const int r, pl_t *pl);
+clock_t reconstruction(const int r, pl_t *pl);
+
+
+////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////// test /////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
 void pvss_test(void);
 

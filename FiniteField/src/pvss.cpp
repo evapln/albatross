@@ -28,6 +28,7 @@ struct pl_t {
   int l; // number of secrets
   int r; // number of participants that wanting to reconstruct the secrets
   ZZ q; // order of the group G_q
+  ZZ p; // p = 2q+1
   ZZ_p h; // generator of G_q
   Vec<ZZ_p> pk; // publi keys
   Vec<ZZ_p> sig; // shamir's shares
@@ -39,7 +40,6 @@ struct pl_t {
   Vec<ZZ_p> S; // secrets reconstructed
 };
 
-
 pl_t *pl_alloc(const int n) {
   pl_t *pl;
   pl = new (nothrow) pl_t;
@@ -48,6 +48,7 @@ pl_t *pl_alloc(const int n) {
   pl->n = n;
   pl->t = 0;
   pl->q = ZZ(0);
+  pl->p = ZZ(0);
   pl->r = 0;
   pl->l = 0;
   pl->pk.SetLength(n);
@@ -59,12 +60,13 @@ pl_t *pl_alloc(const int n) {
 void pl_free(pl_t *pl) {
   if (pl) {
     pl->q.kill();
+    pl->p.kill();
     pl->pk.kill();
     pl->sig.kill();
     pl->sighat.kill();
+    delete[] pl->reco_parties;
     pl->sigtilde.kill();
-    delete pl->reco_parties;
-    pl->sigtilde.kill();
+    pl->S.kill();
     delete pl;
   }
 }
@@ -117,7 +119,7 @@ void generator(ZZ_p& g, const ZZ& q) {
   return;
 }
 
-pl_t *setup(Vec<ZZ_p>& sk, const int n, const ZZ& q, const ZZ& p, const ZZ_p& h) {
+clock_t setup(pl_t* pl, Vec<ZZ_p>& sk, const int n, const ZZ& q, const ZZ& p, const ZZ_p& h) {
   ZZ_p s;
   sk.SetLength(n);
   for (int i = 0; i < n; i++) {
@@ -128,22 +130,23 @@ pl_t *setup(Vec<ZZ_p>& sk, const int n, const ZZ& q, const ZZ& p, const ZZ_p& h)
   }
   ZZ r;
   ZZ_pPush push(p);
-  pl_t * pl = pl_alloc(n);
-  if (!pl)
-      return NULL;
+  clock_t time = 0, timetmp;
   for (int i = 0; i < n; i++) {
     r = rep(sk[i]);
+    timetmp = clock();
     power(pl->pk[i], h, r);
+    time += clock() - timetmp;
   }
   pl->n = n;
   pl->h = h;
   pl->q = q;
-  return pl;
+  pl->p = p;
+  return time;
 }
 
-void distribution(const int l, const int t, const Vec<ZZ_p>& alpha, pl_t *pl) {
+clock_t distribution(const int l, const int t, const Vec<ZZ_p>& alpha, pl_t *pl) {
   if (!pl || t < 1 || t > pl->n)
-    return;
+    return 0;
   int deg = t + l;
   ZZ_pX P;
   random(P, deg);
@@ -153,20 +156,24 @@ void distribution(const int l, const int t, const Vec<ZZ_p>& alpha, pl_t *pl) {
   s.SetLength(pl->n+l);
   ZZ_p tmp;
   ZZ repzz;
+  clock_t time = 0, timetmp;
   for (int i = -l+1; i <= pl->n; i++) {
     tmp = ZZ_p(i);
     eval(s[i+l-1], P, tmp);
   }
-  ZZ p = 2 * pl->q + 1;
-  ZZ_pPush push(p);
+  timetmp = clock();
+  time += clock() - timetmp;
+  ZZ_pPush push(pl->p);
   // attribution of the shamir's shares their values, computation of encrypted shares
   // and proof ldei
   for (int i = 0; i < pl->n; i++) {
     pl->sig[i] = s[i+l];
     repzz = rep(s[i+l]);
+    timetmp = clock();
     power(pl->sighat[i],pl->pk[i],repzz);
+    time += clock() - timetmp;
   }
-  pl->ld.prove(pl->q, p, pl->pk, alpha, deg, pl->sighat, P);
+  pl->ld.prove(pl->q, pl->p, pl->pk, alpha, deg, pl->sighat, P);
 
   // print secrets for verification //////////////////////////
   // cout << endl << "Secrets :\n";
@@ -178,6 +185,7 @@ void distribution(const int l, const int t, const Vec<ZZ_p>& alpha, pl_t *pl) {
   // }
   dist = true;
   s.kill();
+  return time;
 }
 
 void lambda(Mat<ZZ_p>& lambs, const int t, pl_t *pl) {
@@ -204,33 +212,34 @@ void lambda(Mat<ZZ_p>& lambs, const int t, pl_t *pl) {
   }
 }
 
-void reconstruction(const int r, pl_t *pl) {
+clock_t reconstruction(const int r, pl_t *pl) {
   if (!pl) // error : the public ledger doesn't exist
-    return;
+    return 0;
   int t = pl->n - pl->t;
   if (r < t) // error : not enough parts
-    return;
+    return 0;
   pl->S.SetLength(pl->l);
   ZZ_pPush push(pl->q);
   Mat<ZZ_p> lambs;
-  clock_t time_lambda = clock();
+  clock_t time = 0, timetmp;
   lambda(lambs, t, pl);
-  time_lambda = clock() - time_lambda;
   ZZ lamb;
-  ZZ_p::init(2 * pl->q + 1);
+  ZZ_p::init(pl->p);
   ZZ_p tmp;
   for (int j = 0; j < pl->l; j++) {
     pl->S[pl->l-j-1] = ZZ_p(1);
     for (int i = 0; i < t; i++) {
       lamb = rep(lambs[i][j]);
+      timetmp = clock();
       power(tmp,pl->sigtilde[i],lamb);
       mul(pl->S[pl->l-j-1], pl->S[pl->l-j-1], tmp);
+      time += clock() - timetmp;
     }
   }
   pl->r = r;
   rec = true;
   lambs.kill();
-  cout << "time for computing the lambdas: " << (float)time_lambda/CLOCKS_PER_SEC << "s" << endl;
+  return time;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -239,9 +248,7 @@ void reconstruction(const int r, pl_t *pl) {
 
 void pvss_test(void) {
 
-  clock_t rec0, rec, setup_time, dist_time, ldeiverif_time, decrypt_time,
-    dleqverif_time, reco_time, recoverif_time, all_time;
-  rec0 = clock();
+  clock_t timetmp, setup_time, dist_time, decrypt_time,reco_time, all_time;
 
   // PARAMETERS
   int n = 200;
@@ -256,13 +263,14 @@ void pvss_test(void) {
   ZZ_p h;
   power(h,gen,2);
 
-  cout << "\n\ntimes for q of " << size << " bits and " << n << " participants in finite field:\n\n";
   // SET UP
   ZZ_p::init(q);
   Vec<ZZ_p> sk;
   rec = clock();
-  pl_t *pl = setup(sk,n,q,p,h);
-  setup_time = clock() - rec;
+  pl_t * pl = pl_alloc(n);
+  if (!pl)
+    return;
+  setup_time = setup(pl,sk,n,q,p,h);
   if (!pl)
     return;
   // cout << endl << "sk : " << sk << endl;
@@ -273,18 +281,17 @@ void pvss_test(void) {
   alpha.SetLength(pl->n);
   for (int i = 0; i < pl->n; i++)
     alpha[i] = ZZ_p(i+1);
-  rec = clock();
-  distribution(l,t,alpha,pl);
-  dist_time = clock() - rec;
+  dist_time = distribution(l,t,alpha,pl);
 
   // VERIFICATION
-  rec = clock();
+  // rec = clock();
   if (!(pl->ld.verify(q, p, pl->pk, alpha, t+l, pl->sighat))) {
     cout << "The proof LDEI isn't correct..." << endl;
+    pl_free(pl);
     return;
   }
   // cout << "The proof LDEI is correct" << endl;
-  ldeiverif_time = clock() - rec;
+  // ldeiverif_time = clock() - rec;
 
   // SHARE OF DECRYPTED SHARES AND PROOF DLEQ
   // choice of participant wanting to reconstruct
@@ -313,36 +320,35 @@ void pvss_test(void) {
   g.SetDims(r,2);
   Mat<ZZ_p> x;
   x.SetDims(r,2);
-  rec = clock();
   int id;
   for (int i = 0; i < r; i++) {
     id = pl->reco_parties[i];
     x[i][0] = h;
     g[i][1] = pl->sighat[id-1];
+    timetmp = clock();
     power(x[i][1],g[i][1],rep(invsk[i]));
+    decrypt_time = clock() - timetmp;
     pl->sigtilde[i] = x[i][1];
     g[i][0]= pl->pk[id-1];
     pl->dl.push_back(DLEQ());
     pl->dl[i].prove(q,p,g[i],x[i],invsk[i]);
   }
-  decrypt_time = clock() - rec;
   invsk.kill();
 
   // VERIFICATION OF PROOF DLEQ
-  rec = clock();
+  // rec = clock();
   for (int i = 0; i < r; i ++) {
     if(!pl->dl[i].verify(q,p,g[i],x[i])) {
       cout << "At least one of the proofs DLEQ isn't correct..." << endl;
+      pl_free(pl);
       return;
     }
   }
   // cout << "All the proofs DLEQ are correct" << endl;
-  dleqverif_time = clock() - rec;
+  // dleqverif_time = clock() - rec;
 
   // RECONSTRUCTION
-  rec = clock();
-  reconstruction(r, pl);
-  reco_time = clock() - rec;
+  reco_time = reconstruction(r, pl);
   // pl_print(pl);
 
   // RECONSTRUCTINO VERIFICATION
@@ -362,27 +368,24 @@ void pvss_test(void) {
   for (int j = l; j < r+l; j++) {
     xverif[j] = pl->sigtilde[j-l];
   }
-  rec = clock();
   if (!(localldei(q,p,alphaverif,t+l,xverif,r+l))) {
     cout << "The reconstruction isn't correct..." << endl;
+    pl_free(pl);
     return;
   }
   // cout << "Congrats! The reconstruction is correct!" << endl;
-  recoverif_time = clock() - rec;
 
+  all_time = setup_time + dist_time + decrypt_time + reco_time;
 
   // CLEAN UP
   pl_free(pl);
-  q.kill();
 
   // TIME
-  all_time = clock() - rec0;
+  cout << "\n\ntimes for q of " << size << " bits and " << n << " participants in finite field:\n\n";
   cout << "time for seting up: " << (float)setup_time/CLOCKS_PER_SEC << "s" << endl;
   cout << "time for distributing: " << (float)dist_time/CLOCKS_PER_SEC << "s" << endl;
-  cout << "time for verifying ldei: " << (float)ldeiverif_time/CLOCKS_PER_SEC << "s" << endl;
   cout << "time for sharing decrypted shares with dleq: " << (float)decrypt_time/CLOCKS_PER_SEC << "s" << endl;
-  cout << "time for verifying dleq: " << (float)dleqverif_time/CLOCKS_PER_SEC << "s" << endl;
   cout << "time for reconstructing the secrets: " << (float)reco_time/CLOCKS_PER_SEC << "s" << endl;
-  cout << "time for verifying the reconstruction: " << (float)recoverif_time/CLOCKS_PER_SEC << "s" << endl;
-  cout << "\nglobal time: " << (float)all_time/CLOCKS_PER_SEC << "s" << endl << endl;
+  cout << "\nglobal time: " << (float)all_time/CLOCKS_PER_SEC << "s\n\n";
+  cout << "here we only timed elementary operations and we didn't time the proofs\n\n";
 }
