@@ -12,7 +12,7 @@ void prng_init(const unsigned int seed) {
   }
 }
 
-void findprime(const long k, const long l, ZZ& q, ZZ& p) {
+void findprime(ZZ& q, ZZ& p, const long k, const long l) {
   ZZ n, tmp;
   power2(n, k);
   long s = k % 2 - l % 2;
@@ -30,7 +30,6 @@ void findprime(const long k, const long l, ZZ& q, ZZ& p) {
   }
 }
 
-// mod q
 void rootunity(ZZ& w, const long n, const ZZ& q) {
   int i = 2;
   ZZ t = (q-1) / n;
