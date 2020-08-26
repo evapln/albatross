@@ -260,7 +260,7 @@ void pvss_test(const int n) {
   ec_curve_get_ord(q);
 
   /////////////////////////////////////////////////////////// times declarations
-  clock_t timetmp, setup_time, dist_time, decrypt_time, reco_time, all_time;
+  clock_t timetmp, setup_time, dist_time, decrypt_time = 0, reco_time, all_time;
 
   /////////////////////////////////////////////////////////////////// PARAMETERS
   int t = n/3;
@@ -311,7 +311,7 @@ void pvss_test(const int n) {
     id = pl->reco_parties[i];
     timetmp = clock();
     ec_mul(pl->sigtilde[i],pl->sighat[id-1], invsk[i]);
-    decrypt_time = clock() - timetmp;
+    decrypt_time += clock() - timetmp;
   }
 
   /////////////////////////////////////////////////////////////// RECONSTRUCTION
