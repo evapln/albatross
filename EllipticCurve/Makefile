@@ -9,7 +9,6 @@ OBJ = $(SRC:.cpp=.o)
 
 LDLIBS = target/lib/librelic_s.a -lgmp
 CXXFLAGS = -Wall -Wextra -O3 -march=native -mtune=native -march=native
-# CXXFLAGS = -Wall -Wextra -pthread -gx
 RELICINCLUDES = -I$(RELIC_ROOT)/include -Itarget/include
 INCLUDES = -Iinclude
 

@@ -81,16 +81,6 @@ const long n, const ZZ& q) {
 /////////////////// extraction of randomness: second method ////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-// Vec<ZZ_p> bin_rand_vec(const int n) {
-//   Vec<ZZ_p> vec;
-//   vec.SetLength(n);
-//   prng_init(time(NULL) + getpid());
-//   do {
-//     for (int i = 0; i < n; i++)
-//       vec[i] = ZZ_p(rand() % 2);
-//   } while (vec_is_zero(vec));
-//   return vec;
-// }
 
 void bin_rand_vec(Vec<ZZ_p>& vec, const int n) {
   vec.SetLength(n);

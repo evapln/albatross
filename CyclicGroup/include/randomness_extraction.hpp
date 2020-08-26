@@ -26,9 +26,6 @@ bool test(const Vec<ZZ_p>& W, const Vec<ZZ_p>& coef, const ZZ_p& h, const ZZ& w,
 /////////////////// extraction of randomness: second method ////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-// /* return a non zero binary vector of Zp of length n */
-// Vec<ZZ_p> bin_rand_vec(const int n);
-
 /* set vec to a non zero binary vector of Zp of length n */
 void bin_rand_vec(Vec<ZZ_p>& vec, const int n);
 
