@@ -305,7 +305,7 @@ void pvss_test(const int n, const int size) {
     g[i][1] = pl->sighat[id-1];
     timetmp = clock();
     power(x[i][1],g[i][1],rep(invsk[i]));
-    decrypt_time = clock() - timetmp;
+    decrypt_time += clock() - timetmp;
     pl->sigtilde[i] = x[i][1];
     g[i][0]= pl->pk[id-1];
     pl->dl.push_back(DLEQ());
