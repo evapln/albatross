@@ -327,7 +327,7 @@ void pvss_test(const int n) {
   all_time = setup_time + dist_time + decrypt_time + reco_time;
   //////////////////////////////////////////////////////////////////////// TIMES
   cout << "\n\ntimes for " << n << " participants with elliptic curves:\n\n";
-  cout << "time for seting up: " << (float)setup_time/CLOCKS_PER_SEC << "s\n";
+  cout << "time for setting up: " << (float)setup_time/CLOCKS_PER_SEC << "s\n";
   cout << "time for distributing: " << (float)dist_time/CLOCKS_PER_SEC << "s\n";
   cout << "time for sharing decrypted shares: " << (float)decrypt_time/CLOCKS_PER_SEC << "s\n";
   cout << "time for reconstructing the secrets: " << (float)reco_time/CLOCKS_PER_SEC << "s\n";

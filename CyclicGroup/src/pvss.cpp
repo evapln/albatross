@@ -356,7 +356,7 @@ void pvss_test(const int n, const int size) {
 
   // TIME
   cout << "\n\ntimes for q of " << size << " bits and " << n << " participants in finite field:\n\n";
-  cout << "time for seting up: " << (float)setup_time/CLOCKS_PER_SEC << "s" << endl;
+  cout << "time for setting up: " << (float)setup_time/CLOCKS_PER_SEC << "s" << endl;
   cout << "time for distributing: " << (float)dist_time/CLOCKS_PER_SEC << "s" << endl;
   cout << "time for sharing decrypted shares with dleq: " << (float)decrypt_time/CLOCKS_PER_SEC << "s" << endl;
   cout << "time for reconstructing the secrets: " << (float)reco_time/CLOCKS_PER_SEC << "s" << endl;
