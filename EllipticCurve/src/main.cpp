@@ -12,8 +12,11 @@
 
 using namespace std;
 
-int main(void) {
-  cout << "pvss" << endl;
-  pvss_test();
+int main(int argc, char *argv[]) {
+  int n = 200;
+  if (argc == 2)
+    n = atoi(argv[1]);
+  cout << "ppvss test for " << n << " participants\n\n";
+  pvss_test(n);
   return EXIT_SUCCESS;
 }
