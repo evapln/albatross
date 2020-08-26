@@ -11,7 +11,7 @@ using namespace std;
 
 typedef struct pl_t pl_t;
 
-/* allocate the memory for the publice ledger */
+/* allocate the memory for the public ledger */
 pl_t *pl_alloc(const int n);
 
 /* liberate the memory of the public ledger */
@@ -25,21 +25,23 @@ void pl_print(pl_t *pl);
 ////////////////////////////////// scheme //////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-/* setup return the public ledger
-and create the public keys and secret keys for n participants */
-clock_t setup(pl_t* pl, bn_t* sk, const int n, bn_t q);
-
-/* set y = P(x) with P polynomila of degree deg */
-void apply_poly(bn_t y, const bn_t *P, const int deg, const int x, bn_t q);
-
-/* t threshold, l number of secrets
-add the encrypted shares in he public ledger */
-clock_t distribution(const int l, const int t, pl_t *pl, bn_t q);
-
-/* compute the list of lambda to compute the secrets */
+/* compute the list of Lagrange coefficients */
 void lambda(bn_t** lambs, const int t, pl_t *pl, bn_t q);
 
-/* reconstruct the secret vector */
+/* create the public ledger, create the public and private keys for n participants
+return the time used to compute the exponentiations */
+clock_t setup(pl_t* pl, bn_t* sk, const int n, bn_t q);
+
+/* add the encrypted shares in he public ledger with t threshold, l number of secrets
+return the time used to compute the exponentiations */
+clock_t distribution(const int l, const int t, pl_t *pl, bn_t q);
+
+/* reconstruct the secret vector
+return the time used to compute the exponentiations */
 clock_t reconstruction(const int r, pl_t *pl, bn_t q);
+
+////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////// test /////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
 void pvss_test(void);

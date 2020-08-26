@@ -23,7 +23,6 @@ struct pl_t {
   int l; // number of secrets
   int r; // number of participants that wanting to reconstruct the secrets
   ec_t* pk; // publi keys
-  bn_t* sig; // shamir's shares
   ec_t* sighat; // encrypted shares
   int *reco_parties;
   ec_t* sigtilde; // decrypted shares and their index
@@ -45,7 +44,6 @@ void pl_free(pl_t *pl) {
   if (pl) {
     delete[] pl->pk;
     if (dist) {
-      delete[] pl->sig;
       delete[] pl->sighat;
     }
     if (rec) {
@@ -65,9 +63,6 @@ void pl_print(pl_t *pl) {
     ec_print(pl->pk[i]);
   if (dist) {
     cout << endl << pl->t << " threshold" << endl;
-    cout << "shamir's shares :" << endl;
-    for (int i = 0; i < pl->n; ++i)
-      bn_print(pl->sig[i]);
     cout << "\nencrypted shares :" << endl;
     for (int i = 0; i < pl->n; ++i)
       ec_print(pl->sighat[i]);
@@ -92,99 +87,6 @@ void pl_print(pl_t *pl) {
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////// scheme //////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-
-clock_t setup(pl_t* pl, bn_t* sk, const int n, bn_t q) {
-  clock_t time = 0, timetmp;
-  for (int i = 0; i < n; i++) {
-    bn_new(sk[i]);
-    bn_rand_mod(sk[i],q);
-    while (bn_is_zero(sk[i])) {
-      bn_new(sk[i]);
-      bn_rand_mod(sk[i],q);
-    }
-  }
-  for (int i = 0; i < n; i++) {
-    timetmp = clock();
-    ec_mul_gen(pl->pk[i],sk[i]);
-    time += clock() - timetmp;
-  }
-  pl->n = n;
-  bn_free(tmp);
-  return time;
-}
-
-void apply_poly(bn_t y, const bn_t *P, const int deg, const int x, bn_t q) {
-  bn_t bnx, pow, tmp;
-  bn_new(bnx);
-  bn_new(y);
-  bn_new(pow);
-  bn_null(tmp);
-  bn_copy(y, P[0]);
-  if (x < 0) {
-    bn_set_dig(bnx, -x);
-    bn_neg(bnx,bnx);
-  } else
-    bn_set_dig(bnx, x);
-  bn_copy(pow,bnx);
-  for (int i = 1; i < deg; ++i) {
-    bn_new(tmp);
-    bn_mul(tmp, P[i], pow);
-    bn_add(y,y,tmp);
-    bn_mod(y,y,q);
-    bn_mul(pow,pow,bnx);
-    bn_mod(pow,pow,q);
-  }
-  bn_free(fpx);
-  bn_free(pow);
-  bn_free(tmp);
-}
-
-clock_t distribution(const int l, const int t, pl_t *pl, bn_t q) {
-  if (!pl || t < 1 || t > pl->n)
-    return 0;
-  int deg = t + l;
-  // random polynomila of Fp
-  bn_t *P = new bn_t[deg];
-  for (int i = 0; i < deg; ++i) {
-    bn_rand_mod(P[i],q);
-  }
-  pl->l = l;
-  pl->t = t;
-  bn_t *s = new bn_t[pl->n+l];
-  for (int i = -l+1; i <= pl->n; i++) {
-    apply_poly(s[i+l-1],P,deg,i,q);
-  }
-
-  clock_t time = 0, timetmp;
-  // attribution of the shamir's shares their values, computation of encrypted shares
-  // and proof ldei
-  pl->sig = new bn_t[pl->n];
-  pl->sighat = new ec_t[pl->n];
-  for (int i = 0; i < pl->n; i++) {
-    bn_copy(pl->sig[i],s[i+l]);
-    timetmp = clock();
-    ec_mul(pl->sighat[i],pl->pk[i],s[i+l]);
-    time += clock() - timetmp;
-  }
-  // pl->ld.prove(pl->q, p, pl->pk, alpha, deg, pl->sighat, P);
-
-  // print secrets for verification //////////////////////////
-  // cout << endl << "Secrets :\n";
-  // ec_t etmp;
-  // ec_null(etmp);
-  // for (int i = l-1; i >= 0; i--) {
-  //   ec_new(etmp);
-  //   ec_mul_gen(etmp, s[l-1-i]);
-  //   cout << "S" << i << " =\n";
-  //   ec_print(etmp);
-  // }
-  dist = true;
-  // CLEAN UP
-  delete[] s;
-  delete[] P;
-  ec_free(etmp);
-  return time;
-}
 
 void lambda(bn_t** lambs, const int t, pl_t *pl, bn_t q) {
   bn_t num, den, tmp1, tmp2;
@@ -228,25 +130,81 @@ void lambda(bn_t** lambs, const int t, pl_t *pl, bn_t q) {
   bn_free(tmp2);
 }
 
+clock_t setup(pl_t* pl, bn_t* sk, const int n, bn_t q) {
+  clock_t time = 0, timetmp;
+  // choice of secret keys sk
+  for (int i = 0; i < n; i++) {
+    bn_new(sk[i]);
+    bn_rand_mod(sk[i],q);
+    while (bn_is_zero(sk[i])) {
+      bn_new(sk[i]);
+      bn_rand_mod(sk[i],q);
+    }
+  }
+  // computation of public keys pk = h^sk
+  for (int i = 0; i < n; i++) {
+    timetmp = clock();
+    ec_mul_gen(pl->pk[i],sk[i]);
+    time += clock() - timetmp;
+  }
+  // set the variables in the public ledger
+  pl->n = n;
+  bn_free(tmp);
+  return time;
+}
+
+clock_t distribution(const int l, const int t, pl_t *pl, bn_t q) {
+  if (!pl || t < 1 || t > pl->n)
+    return 0;
+  int deg = t + l;
+  // choice of the polynomial P
+  bn_t *P = new bn_t[deg];
+  for (int i = 0; i < deg; ++i) {
+    bn_rand_mod(P[i],q);
+  }
+  // conputation of the exponents and shamir's shares
+  bn_t *s = new bn_t[pl->n+l];
+  for (int i = -l+1; i <= pl->n; i++) {
+    apply_poly(s[i+l-1],P,deg,i,q);
+  }
+
+  clock_t time = 0, timetmp;
+  // computation of encrypted shares
+  pl->sighat = new ec_t[pl->n];
+  for (int i = 0; i < pl->n; i++) {
+    timetmp = clock();
+    ec_mul(pl->sighat[i],pl->pk[i],s[i+l]);
+    time += clock() - timetmp;
+  }
+  // set the variables in the public ledger
+  pl->l = l;
+  pl->t = t;
+  dist = true;
+  // clean up
+  delete[] s;
+  delete[] P;
+  ec_free(etmp);
+  return time;
+}
+
 clock_t reconstruction(const int r, pl_t *pl, bn_t q) {
   if (!pl) // error : the public ledger doesn't exist
     return 0;
   int t = pl->n - pl->t;
   if (r < t) // error : not enough parts
     return 0;
-  pl->S = new ec_t[pl->l];
+  // computation of the Lagrange coefficients
   bn_t** lambs;
   lambs = new bn_t*[t];
   for (int i = 0; i < t; ++i)
     lambs[i] = new bn_t[pl->l];
   clock_t time = 0, timetmp;
   lambda(lambs,t,pl,q);
+  // copmputation of the secrets
+  pl->S = new ec_t[pl->l];
   ec_t tmp;
   ec_null(tmp);
   for (int j = 0; j < pl->l; j++) {
-    // ec_new(tmp);
-    // ec_mul(tmp,pl->sigtilde[0],lambs[0][j]);
-    // ec_copy(pl->S[pl->l-j-1], tmp);
     ec_new(pl->S[pl->l-j-1]);
     timetmp = clock();
     ec_mul(pl->S[pl->l-j-1],pl->sigtilde[0],lambs[0][j]);
@@ -259,12 +217,14 @@ clock_t reconstruction(const int r, pl_t *pl, bn_t q) {
       time += clock() - timetmp;
     }
   }
+  // set the variables in the public ledger
+  pl->r = r;
+  rec = true;
+  // clean up
   for (int i = 0; i < t; ++i)
     delete[] lambs[i];
   delete[] lambs;
-  pl->r = r;
   ec_free(tmp);
-  rec = true;
   return time;
 }
 
