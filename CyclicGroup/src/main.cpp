@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
     rootunity(w,n,q);
     ZZ_p::init(p);
     Mat<ZZ_p> M;
-    clock_t rec, tsame = 0, tdif = 0, tffte = 0;
+    clock_t rec, tsame = 0, tdif = 0, tfftesame = 0, tfftedif = 0;
     int m = 1000;
     Vec<ZZ_p> vech;
     Vec<ZZ_p> hhat;
@@ -130,7 +130,7 @@ int main(int argc, char *argv[]) {
       tdif += clock() - rec;
     }
 
-    // test ffte
+    // test ffte m computation with the same w
     for (int i = 0; i < m; i++) {
       // new vector
       for (int i = 0; i < n; i++) {
@@ -140,12 +140,28 @@ int main(int argc, char *argv[]) {
 
       rec = clock();
       FFTE(f, n, L, w, q);
-      tffte += clock() - rec;
+      tfftesame += clock() - rec;
     }
 
-    cout << "same matrix, " << m << " computations : " << (float)tsame/CLOCKS_PER_SEC << " second(s).\n";
-    cout << "different matrices, " << m << " computations : " << (float)tdif/CLOCKS_PER_SEC << " second(s).\n";
-    cout << "ffte, " << m << " computations : " << (float)tffte/CLOCKS_PER_SEC << " second(s).\n";
+    // test ffte m computation with different w
+    for (int i = 0; i < m; i++) {
+      // new w
+      rootunity(w,n,q);
+      // new vector
+      for (int i = 0; i < n; i++) {
+        random(coef[i]);
+        power(L[i],h,rep(coef[i]));
+      }
+
+      rec = clock();
+      FFTE(f, n, L, w, q);
+      tfftedif += clock() - rec;
+    }
+
+    cout << "same 0-1 matrix, " << m << " computations : " << (float)tsame/CLOCKS_PER_SEC << " second(s), in average for one computation :" << (float)tsame/(m*CLOCKS_PER_SEC) << endl;
+    cout << "different 0-1 matrices, " << m << " computations : " << (float)tdif/CLOCKS_PER_SEC << " second(s), in average for one computation :" << (float)tdif/(m*CLOCKS_PER_SEC) << endl;
+    cout << "ffte same w, " << m << " computations : " << (float)tfftesame/CLOCKS_PER_SEC << " second(s), in average for one computation :" << (float)tfftesame/(m*CLOCKS_PER_SEC) << endl;
+    cout << "ffte different w, " << m << " computations : " << (float)tfftedif/CLOCKS_PER_SEC << " second(s), in average for one computation :" << (float)tfftedif/(m*CLOCKS_PER_SEC) << endl;
   }
 
   if (ffte) {
