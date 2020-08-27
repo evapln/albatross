@@ -53,10 +53,10 @@ int main(int argc, char *argv[]) {
                 "\tALBATROSS -c [-h]\n"
                 "\tALBATROSS -f[size_of_q] [-n number_of_participants] [-h]\n\n"
                 "ALBATROSS: publicly AttestabLe BATched Randomness based On Secret Sharing \n\n"
-                "-p, --ppvss\t\t\tRun the ppvss scheme \n\t\t\t\tif the size of q isn't specified, set q of size 1024 bits\n\t\t\t\tcompatible with option -n\n"
-                "-f, --ffte\t\t\tRun the ffte \n\t\t\t\tif the size of q isn't specified, set q of size 1024 bits\n\t\t\t\tcompatible with option -n\n"
-                "-c, --comparison\t\tCompare the two methods of extraction\n\t\t\t\twith n = 2048 and q of size 128\n"
-                "-n, --number_of_participants\tSet the number of participants n to the argument\n\t\t\t\twithout this option n = 1024\n"
+                "-p, --ppvss\t\t\tRun the ppvss scheme \n\t\t\t\tIf the size of q isn't specified, set q of size 1024 bits\n\t\t\t\tCompatible with option -n\n"
+                "-f, --ffte\t\t\tRun the ffte \n\t\t\t\tIf the size of q isn't specified, set q of size 1024 bits\n\t\t\t\tCompatible with option -n\n"
+                "-c, --comparison\t\tCompare the two methods of extraction\n\t\t\t\tWith n = 2048 and q of size 128\n"
+                "-n, --number_of_participants\tSet the number of participants n to the argument\n\t\t\t\tWithout this option n = 1024\n"
                 "-h, --help\t\t\tDisplay this help\n\n"
                 "Do not put space between an option and its argument, for example: ./albatross -p128 -n512\n\n";
         return EXIT_SUCCESS;
@@ -68,10 +68,10 @@ int main(int argc, char *argv[]) {
             "\tALBATROSS -c [-h]\n"
             "\tALBATROSS -f[size_of_q] [-n number_of_participants] [-h]\n\n"
             "ALBATROSS: publicly AttestabLe BATched Randomness based On Secret Sharing \n\n"
-            "-p, --ppvss\t\t\tRun the ppvss scheme \n\t\t\t\tif the size of q isn't specified, set q of size 1024 bits\n\t\t\t\tcompatible with option -n\n"
-            "-f, --ffte\t\t\tRun the ffte \n\t\t\t\tif the size of q isn't specified, set q of size 1024 bits\n\t\t\t\tcompatible with option -n\n"
-            "-c, --comparison\t\tCompare the two methods of extraction\n\t\t\t\twith n = 2048 and q of size 128\n"
-            "-n, --number_of_participants\tSet the number of participants n to the argument\n\t\t\t\twithout this option n = 1024\n"
+            "-p, --ppvss\t\t\tRun the ppvss scheme \n\t\t\t\tIf the size of q isn't specified, set q of size 1024 bits\n\t\t\t\tCompatible with option -n\n"
+            "-f, --ffte\t\t\tRun the ffte \n\t\t\t\tIf the size of q isn't specified, set q of size 1024 bits\n\t\t\t\tCompatible with option -n\n"
+            "-c, --comparison\t\tCompare the two methods of extraction\n\t\t\t\tWith n = 2048 and q of size 128\n"
+            "-n, --number_of_participants\tSet the number of participants n to the argument\n\t\t\t\tWithout this option n = 1024\n"
             "-h, --help\t\t\tDisplay this help\n\n"
             "Do not put space between an option and its argument, for example: ./albatross -p128 -n512\n\n";
     cout << "Please, enter one mode at a time\n\n";
@@ -83,10 +83,10 @@ int main(int argc, char *argv[]) {
             "\tALBATROSS -c [-h]\n"
             "\tALBATROSS -f[size_of_q] [-n number_of_participants] [-h]\n\n"
             "ALBATROSS: publicly AttestabLe BATched Randomness based On Secret Sharing \n\n"
-            "-p, --ppvss\t\t\tRun the ppvss scheme \n\t\t\t\tif the size of q isn't specified, set q of size 1024 bits\n\t\t\t\tcompatible with option -n\n"
-            "-f, --ffte\t\t\tRun the ffte \n\t\t\t\tif the size of q isn't specified, set q of size 1024 bits\n\t\t\t\tcompatible with option -n\n"
-            "-c, --comparison\t\tCompare the two methods of extraction\n\t\t\t\twith n = 2048 and q of size 128\n"
-            "-n, --number_of_participants\tSet the number of participants n to the argument\n\t\t\t\twithout this option n = 1024\n"
+            "-p, --ppvss\t\t\tRun the ppvss scheme \n\t\t\t\tIf the size of q isn't specified, set q of size 1024 bits\n\t\t\t\tCompatible with option -n\n"
+            "-f, --ffte\t\t\tRun the ffte \n\t\t\t\tIf the size of q isn't specified, set q of size 1024 bits\n\t\t\t\tCompatible with option -n\n"
+            "-c, --comparison\t\tCompare the two methods of extraction\n\t\t\t\tWith n = 2048 and q of size 128\n"
+            "-n, --number_of_participants\tSet the number of participants n to the argument\n\t\t\t\tWithout this option n = 1024\n"
             "-h, --help\t\t\tDisplay this help\n\n"
             "Do not put space between an option and its argument, for example: ./albatross -p128 -n512\n\n";
     cout << "Please, enter a mode (p, c, f or h)\n";
