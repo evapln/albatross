@@ -48,29 +48,48 @@ int main(int argc, char *argv[]) {
         n = atoi(optarg);
         break;
       case 'h':
-        cout << "Usage :\tALBATROSS -p [SIZE_OF_Q|-n NUMBER_OF_PARTICIPANTS|-h]\n"
-                "\tALBATROSS -c[-n NUMBER_OF_PARTICIPANTS|-h]\n"
-                "\tALBATROSS -f [SIZE_OF_Q|-n NUMBER_OF_PARTICIPANTS|-h]\n\n"
-                "ALBATROSS: publicly AttestabLe BATched Randomness based On Secret Sharing \n\n"
-                "-p, --ppvss\t\t\trun the ppvss scheme with q of size the argument or 1024 bits if not specified\n"
-                "-c, --comparison\t\tcompare the two method of extraction\n"
-                "-f, --ffte\t\t\trun the ffte with q of size the argument or 1024 bits if not specified\n"
-                "-n, --number_of_participants\tset n, without this option, n = 1024\n"
-                "-h, --help\t\t\tdisplay this help\n\n";
-        return EXIT_SUCCESS;
       default:
-        cout << "error: invalid option!\n";
-        return EXIT_FAILURE;
+        cout << "\nUsage :\tALBATROSS -p[size_of_q] [-n number_of_participants] [-h]\n"
+                "\tALBATROSS -c [-h]\n"
+                "\tALBATROSS -f[size_of_q] [-n number_of_participants] [-h]\n\n"
+                "ALBATROSS: publicly AttestabLe BATched Randomness based On Secret Sharing \n\n"
+                "-p, --ppvss\t\t\tRun the ppvss scheme \n\t\t\t\tif the size of q isn't specified, set q of size 1024 bits\n\t\t\t\tcompatible with option -n\n"
+                "-f, --ffte\t\t\tRun the ffte \n\t\t\t\tif the size of q isn't specified, set q of size 1024 bits\n\t\t\t\tcompatible with option -n\n"
+                "-c, --comparison\t\tCompare the two methods of extraction\n\t\t\t\twith n = 2048 and q of size 128\n"
+                "-n, --number_of_participants\tSet the number of participants n to the argument\n\t\t\t\twithout this option n = 1024\n"
+                "-h, --help\t\t\tDisplay this help\n\n"
+                "Do not put space between an option and its argument, for example: ./albatross -p128 -n512\n\n";
+        return EXIT_SUCCESS;
     }
   }
 
   if ((ppvss && comp) || (ffte && comp) || (ffte && ppvss)){
-    cout << "Please, enter one mode at a time\n";
+    cout << "\nUsage :\tALBATROSS -p[size_of_q] [-n number_of_participants] [-h]\n"
+            "\tALBATROSS -c [-h]\n"
+            "\tALBATROSS -f[size_of_q] [-n number_of_participants] [-h]\n\n"
+            "ALBATROSS: publicly AttestabLe BATched Randomness based On Secret Sharing \n\n"
+            "-p, --ppvss\t\t\tRun the ppvss scheme \n\t\t\t\tif the size of q isn't specified, set q of size 1024 bits\n\t\t\t\tcompatible with option -n\n"
+            "-f, --ffte\t\t\tRun the ffte \n\t\t\t\tif the size of q isn't specified, set q of size 1024 bits\n\t\t\t\tcompatible with option -n\n"
+            "-c, --comparison\t\tCompare the two methods of extraction\n\t\t\t\twith n = 2048 and q of size 128\n"
+            "-n, --number_of_participants\tSet the number of participants n to the argument\n\t\t\t\twithout this option n = 1024\n"
+            "-h, --help\t\t\tDisplay this help\n\n"
+            "Do not put space between an option and its argument, for example: ./albatross -p128 -n512\n\n";
+    cout << "Please, enter one mode at a time\n\n";
     return EXIT_FAILURE;
   }
 
   if (!ppvss && !comp && !ffte){
-    cout << "Please, enter a mode (p, r, f or h)\n";
+    cout << "\nUsage :\tALBATROSS -p[size_of_q] [-n number_of_participants] [-h]\n"
+            "\tALBATROSS -c [-h]\n"
+            "\tALBATROSS -f[size_of_q] [-n number_of_participants] [-h]\n\n"
+            "ALBATROSS: publicly AttestabLe BATched Randomness based On Secret Sharing \n\n"
+            "-p, --ppvss\t\t\tRun the ppvss scheme \n\t\t\t\tif the size of q isn't specified, set q of size 1024 bits\n\t\t\t\tcompatible with option -n\n"
+            "-f, --ffte\t\t\tRun the ffte \n\t\t\t\tif the size of q isn't specified, set q of size 1024 bits\n\t\t\t\tcompatible with option -n\n"
+            "-c, --comparison\t\tCompare the two methods of extraction\n\t\t\t\twith n = 2048 and q of size 128\n"
+            "-n, --number_of_participants\tSet the number of participants n to the argument\n\t\t\t\twithout this option n = 1024\n"
+            "-h, --help\t\t\tDisplay this help\n\n"
+            "Do not put space between an option and its argument, for example: ./albatross -p128 -n512\n\n";
+    cout << "Please, enter a mode (p, c, f or h)\n";
     return EXIT_FAILURE;
   }
 
@@ -82,18 +101,17 @@ int main(int argc, char *argv[]) {
 
   if (comp) {
     /////////////////////////////////////////////// comparision FFTE / mul_mat
-    // int n = 2048;
-    cout << "comparison between ffte and 0-1 matrix\n\n";
-    cout << n << endl;
+    n = 2048;
+    cout << "comparison between ffte and 0-1 matrix with " << n << " participants and q of 128 bits\n\n";
     int k = n/128;
     ZZ p,q;
-    findprime(q,p,100,28);
+    findprime(q,p,11,117);
     ZZ w;
     rootunity(w,n,q);
     ZZ_p::init(p);
     Mat<ZZ_p> M;
-    clock_t rec, tsame = 0, tdif = 0, tfftesame = 0, tfftedif = 0;
-    int m = 1000;
+    clock_t rec, tmatrix = 0, tffte = 0;
+    int m = 100;
     Vec<ZZ_p> vech;
     Vec<ZZ_p> hhat;
     Vec<ZZ_p> f;
@@ -106,18 +124,6 @@ int main(int argc, char *argv[]) {
     coef.SetLength(n);
 
     // test time m computations with the same matrix
-    mat_gen(M,n,k);
-    for (int i = 0; i < m; i++) {
-      // new vector
-      for (int j = 0; j < n; j++)
-       random(vech[i]);
-
-      rec = clock();
-      mul_mat(hhat,M,n,k,vech);
-      tsame += clock() - rec;
-    }
-
-    // test time m computations with the same matrix
     for (int i = 0; i < m; i++) {
       // new matrix
       mat_gen(M,n,k);
@@ -127,21 +133,9 @@ int main(int argc, char *argv[]) {
 
       rec = clock();
       mul_mat(hhat,M,n,k,vech);
-      tdif += clock() - rec;
+      tmatrix += clock() - rec;
     }
 
-    // test ffte m computation with the same w
-    for (int i = 0; i < m; i++) {
-      // new vector
-      for (int i = 0; i < n; i++) {
-        random(coef[i]);
-        power(L[i],h,rep(coef[i]));
-      }
-
-      rec = clock();
-      FFTE(f, n, L, w, q);
-      tfftesame += clock() - rec;
-    }
 
     // test ffte m computation with different w
     for (int i = 0; i < m; i++) {
@@ -155,13 +149,13 @@ int main(int argc, char *argv[]) {
 
       rec = clock();
       FFTE(f, n, L, w, q);
-      tfftedif += clock() - rec;
+      tffte += clock() - rec;
     }
 
-    cout << "same 0-1 matrix, " << m << " computations : " << (float)tsame/CLOCKS_PER_SEC << " second(s), in average for one computation :" << (float)tsame/(m*CLOCKS_PER_SEC) << endl;
-    cout << "different 0-1 matrices, " << m << " computations : " << (float)tdif/CLOCKS_PER_SEC << " second(s), in average for one computation :" << (float)tdif/(m*CLOCKS_PER_SEC) << endl;
-    cout << "ffte same w, " << m << " computations : " << (float)tfftesame/CLOCKS_PER_SEC << " second(s), in average for one computation :" << (float)tfftesame/(m*CLOCKS_PER_SEC) << endl;
-    cout << "ffte different w, " << m << " computations : " << (float)tfftedif/CLOCKS_PER_SEC << " second(s), in average for one computation :" << (float)tfftedif/(m*CLOCKS_PER_SEC) << endl;
+    cout << "0-1 matrices\n  " << m << " computations :\t\t   " << (float)tmatrix/CLOCKS_PER_SEC << "s\n";
+    cout << "  in average for one computation : " << (float)tmatrix/(m*CLOCKS_PER_SEC) << "s\n";
+    cout << "ffte\n  " << m << " computations :\t\t   " << (float)tffte/CLOCKS_PER_SEC << "s\n";
+    cout << "  in average for one computation : " << (float)tffte/(m*CLOCKS_PER_SEC) << "s\n";
   }
 
   if (ffte) {
