@@ -48,14 +48,14 @@ int main(int argc, char *argv[]) {
         n = atoi(optarg);
         break;
       case 'h':
-        cout << "Usage :\tALBATROSS -p SIZE_OF_Q [-n NUMBER_OF_PARTICIPANTS|-h]\n"
+        cout << "Usage :\tALBATROSS -p [SIZE_OF_Q|-n NUMBER_OF_PARTICIPANTS|-h]\n"
                 "\tALBATROSS -c[-n NUMBER_OF_PARTICIPANTS|-h]\n"
-                "\tALBATROSS -f SIZE_OF_Q [-n NUMBER_OF_PARTICIPANTS|-h]\n\n"
+                "\tALBATROSS -f [SIZE_OF_Q|-n NUMBER_OF_PARTICIPANTS|-h]\n\n"
                 "ALBATROSS: publicly AttestabLe BATched Randomness based On Secret Sharing \n\n"
-                "-p, --ppvss\t\t\trun the ppvss scheme with q of size the input\n"
+                "-p, --ppvss\t\t\trun the ppvss scheme with q of size the argument or 1024 bits if not specified\n"
                 "-c, --comparison\t\tcompare the two method of extraction\n"
-                "-f, --ffte\t\t\trun the ffte with q of size the input\n"
-                "-n, --number_of_participants\tset n, without this ption, n = 1024\n"
+                "-f, --ffte\t\t\trun the ffte with q of size the argument or 1024 bits if not specified\n"
+                "-n, --number_of_participants\tset n, without this option, n = 1024\n"
                 "-h, --help\t\t\tdisplay this help\n\n";
         return EXIT_SUCCESS;
       default:
